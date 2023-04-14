@@ -39,4 +39,9 @@ cp -r node_modules/@aave/deploy-v3/artifacts/contracts/* temp-artifacts/deploy
 # Export MARKET_NAME variable to use Aave market as testnet deployment setup
 export MARKET_NAME="Test"
 export ENABLE_REWARDS="false"
+
+# Move all scoped folders into types folder
+cp -r types/contracts/* types
+cp -r types/factories/contracts/* types/factories
+
 echo "[BASH] Testnet environment ready"

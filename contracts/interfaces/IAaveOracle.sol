@@ -31,6 +31,12 @@ interface IAaveOracle is IPriceOracleGetter {
   event FallbackOracleUpdated(address indexed fallbackOracle);
 
   /**
+   * @dev Emitted after the address of Pyth oracle is updated
+   * @param pythOracle The address of the Pyth oracle
+   */
+  event PythOracleUpdated(address indexed pythOracle);
+
+  /**
    * @notice Returns the PoolAddressesProvider
    * @return The address of the PoolAddressesProvider contract
    */
