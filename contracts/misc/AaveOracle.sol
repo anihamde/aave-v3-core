@@ -111,6 +111,13 @@ contract AaveOracle is IAaveOracle {
     emit PythOracleUpdated(pythOracle);
   }
 
+  function updatePythPrice(bytes[] calldata priceUpdateData) public payable {
+    // Update the prices to the latest available values and pay the required fee for it. The `priceUpdateData` data
+    // should be retrieved from a Pyth off-chain Price Service API using the `pyth-evm-js` package.
+    uint fee = _pythOracle.getUpdateFee(priceUpdateData);
+    _pythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
+  }
+
   /// @inheritdoc IPriceOracleGetter
   function getAssetPrice(address asset) public view override returns (uint256) {
     bytes32 priceID = assetsIDs[asset];
