@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.10;
 
-import '@pythnetwork/pyth-sdk-solidity/IPyth.sol';
-import '@pythnetwork/pyth-sdk-solidity/PythStructs.sol';
+import '../dependencies/pyth/IPyth.sol';
+import '../dependencies/pyth/PythStructs.sol';
 import {Errors} from '../protocol/libraries/helpers/Errors.sol';
 import {IACLManager} from '../interfaces/IACLManager.sol';
 import {IPoolAddressesProvider} from '../interfaces/IPoolAddressesProvider.sol';
