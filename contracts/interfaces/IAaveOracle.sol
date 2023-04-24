@@ -33,8 +33,9 @@ interface IAaveOracle is IPriceOracleGetter {
   /**
    * @dev Emitted after the address of Pyth oracle is updated
    * @param pythOracle The address of the Pyth oracle
+   * @param isMock True for mock, False for real
    */
-  event PythOracleUpdated(address indexed pythOracle);
+  event PythOracleUpdated(address indexed pythOracle, bool isMock);
 
   /**
    * @notice Returns the PoolAddressesProvider

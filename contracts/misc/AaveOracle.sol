@@ -3,6 +3,7 @@ pragma solidity 0.8.10;
 
 import '../dependencies/pyth/IPyth.sol';
 import '../dependencies/pyth/PythStructs.sol';
+import '../dependencies/pyth/MockPyth.sol';
 import {Errors} from '../protocol/libraries/helpers/Errors.sol';
 import {IACLManager} from '../interfaces/IACLManager.sol';
 import {IPoolAddressesProvider} from '../interfaces/IPoolAddressesProvider.sol';
@@ -23,6 +24,8 @@ contract AaveOracle is IAaveOracle {
   // Map of asset price IDs (asset => priceID)
   mapping(address => bytes32) private assetsIDs;
   IPyth _pythOracle;
+  MockPyth _mockPythOracle;
+  bool _isMock;
 
   IPriceOracleGetter private _fallbackOracle;
   address public immutable override BASE_CURRENCY;
@@ -46,6 +49,7 @@ contract AaveOracle is IAaveOracle {
    * @param baseCurrency The base currency used for the price quotes. If USD is used, base currency is 0x0
    * @param baseCurrencyUnit The unit of the base currency
    * @param pythOracle The address of the Pyth oracle in this network
+   * @param isMock True for mock Pyth, 1 for real Pyth
    */
   constructor(
     IPoolAddressesProvider provider,
@@ -54,7 +58,8 @@ contract AaveOracle is IAaveOracle {
     address fallbackOracle,
     address baseCurrency,
     uint256 baseCurrencyUnit,
-    address pythOracle
+    address pythOracle,
+    bool isMock
   ) {
     ADDRESSES_PROVIDER = provider;
     _setFallbackOracle(fallbackOracle);
@@ -62,7 +67,7 @@ contract AaveOracle is IAaveOracle {
     BASE_CURRENCY = baseCurrency;
     BASE_CURRENCY_UNIT = baseCurrencyUnit;
     emit BaseCurrencySet(baseCurrency, baseCurrencyUnit);
-    _setPythOracle(pythOracle);
+    _setPythOracle(pythOracle, isMock);
   }
 
   /// @inheritdoc IAaveOracle
@@ -88,7 +93,8 @@ contract AaveOracle is IAaveOracle {
   function _setAssetsSources(address[] memory assets, address[] memory sources) internal {
     require(assets.length == sources.length, Errors.INCONSISTENT_PARAMS_LENGTH);
     for (uint256 i = 0; i < assets.length; i++) {
-      assetsIDs[assets[i]] = bytes32(uint256(uint160(sources[i])));
+      bytes32 priceID = bytes32(uint256(uint160(sources[i])));
+      assetsIDs[assets[i]] = priceID;
       emit AssetSourceUpdated(assets[i], sources[i]);
     }
   }
@@ -105,17 +111,53 @@ contract AaveOracle is IAaveOracle {
   /**
    * @notice Internal function to set the Pyth oracle
    * @param pythOracle The address of the Pyth oracle
+   * @param isMock The oracle type, True for Mock and False for real
    */
-  function _setPythOracle(address pythOracle) internal {
-    _pythOracle = IPyth(pythOracle);
-    emit PythOracleUpdated(pythOracle);
+  function _setPythOracle(address pythOracle, bool isMock) internal {
+    if (isMock) {
+      _mockPythOracle = MockPyth(pythOracle);
+    } else {
+      _pythOracle = IPyth(pythOracle);
+    }
+    _isMock = isMock;
+    emit PythOracleUpdated(pythOracle, isMock);
   }
 
   function updatePythPrice(bytes[] calldata priceUpdateData) public payable {
     // Update the prices to the latest available values and pay the required fee for it. The `priceUpdateData` data
     // should be retrieved from a Pyth off-chain Price Service API using the `pyth-evm-js` package.
-    uint fee = _pythOracle.getUpdateFee(priceUpdateData);
-    _pythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
+    if (_isMock) {
+      uint fee = _pythOracle.getUpdateFee(priceUpdateData);
+      _pythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
+    } else {
+      uint fee = _mockPythOracle.getUpdateFee(priceUpdateData);
+      _mockPythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
+    }
+  }
+
+  function updateWithPriceFeedUpdateData(
+    address id,
+    int64 price,
+    uint64 conf,
+    int32 expo,
+    int64 emaPrice,
+    uint64 emaConf,
+    uint64 publishTime
+  ) public payable {
+    bytes32 priceID = bytes32(uint256(uint160(id)));
+    bytes memory priceFeedData = _mockPythOracle.createPriceFeedUpdateData(
+      priceID,
+      price,
+      conf,
+      expo,
+      emaPrice,
+      emaConf,
+      publishTime
+    );
+
+    bytes[] memory updateData = new bytes[](1);
+    updateData[0] = priceFeedData;
+    _mockPythOracle.updatePriceFeeds(updateData);
   }
 
   /// @inheritdoc IPriceOracleGetter
@@ -127,9 +169,23 @@ contract AaveOracle is IAaveOracle {
     } else if (priceID == bytes32(0)) {
       return _fallbackOracle.getAssetPrice(asset);
     } else {
-      PythStructs.Price memory pythPrice = _pythOracle.getPrice(priceID);
+      PythStructs.Price memory pythPrice;
+      uint validTime;
+      if (_isMock) {
+        pythPrice = _mockPythOracle.getPriceUnsafe(priceID);
+        validTime = _mockPythOracle.getValidTimePeriod();
+      } else {
+        pythPrice = _pythOracle.getPriceUnsafe(priceID);
+        validTime = _pythOracle.getValidTimePeriod();
+      }
       int256 price = int256(pythPrice.price);
-      if (price > 0) {
+      bool stale;
+      if (block.timestamp > pythPrice.publishTime) {
+        stale = (block.timestamp - pythPrice.publishTime) > validTime;
+      } else {
+        stale = (pythPrice.publishTime - block.timestamp) > validTime;
+      }
+      if (price > 0 && !stale) {
         return uint256(price);
       } else {
         return _fallbackOracle.getAssetPrice(asset);
