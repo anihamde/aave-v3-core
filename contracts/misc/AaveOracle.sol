@@ -104,7 +104,7 @@ contract AaveOracle is IAaveOracle {
    * @param fallbackOracle The address of the fallback oracle
    */
   function _setFallbackOracle(address fallbackOracle) internal {
-    _fallbackOracle = IPriceOracleGetter(fallbackOracle);
+    _fallbackOracle = IPriceOracleGetter(payable(fallbackOracle));
     emit FallbackOracleUpdated(fallbackOracle);
   }
 
@@ -179,11 +179,10 @@ contract AaveOracle is IAaveOracle {
         emaConf,
         publishTime
       );
-      (id, price, conf, expo, emaPrice, emaConf, publishTime);
 
       bytes[] memory updateData = new bytes[](1);
       updateData[0] = priceFeedData;
-      _mockPythOracle.updatePriceFeeds(updateData);
+      _mockPythOracle.updatePriceFeeds{value: msg.value}(updateData);
     }
   }
 
@@ -260,4 +259,6 @@ contract AaveOracle is IAaveOracle {
       Errors.CALLER_NOT_ASSET_LISTING_OR_POOL_ADMIN
     );
   }
+
+  receive() external payable {}
 }

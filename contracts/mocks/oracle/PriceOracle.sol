@@ -29,4 +29,6 @@ contract PriceOracle is IPriceOracle {
     ethPriceUsd = price;
     emit EthPriceUpdated(price, block.timestamp);
   }
+
+  receive() external payable {}
 }

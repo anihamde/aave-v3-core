@@ -33,4 +33,6 @@ interface IPriceOracleGetter {
    * @param priceUpdateData The bytes array that holds the encoded price info to update with
    */
   function updatePythPrice(bytes[] calldata priceUpdateData) external payable;
+
+  receive() external payable;
 }

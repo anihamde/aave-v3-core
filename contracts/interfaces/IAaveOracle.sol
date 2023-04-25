@@ -75,4 +75,6 @@ interface IAaveOracle is IPriceOracleGetter {
    * @return The address of the fallback oracle
    */
   function getFallbackOracle() external view returns (address);
+
+  receive() external payable;
 }

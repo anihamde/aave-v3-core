@@ -203,7 +203,7 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     bytes[] memory priceUpdateData
   ) public payable virtual override returns (uint256) {
     // first update price
-    address priceOracle = ADDRESSES_PROVIDER.getPriceOracle();
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
     IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
 
     DataTypes.ExecuteWithdrawParams memory params = DataTypes.ExecuteWithdrawParams({
@@ -235,7 +235,7 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     bytes[] memory priceUpdateData
   ) public payable virtual override {
     // first update price
-    address priceOracle = ADDRESSES_PROVIDER.getPriceOracle();
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
     IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
 
     BorrowLogic.executeBorrow(
@@ -359,7 +359,8 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     bytes[] memory priceUpdateData
   ) public payable virtual override {
     // first update price
-    address priceOracle = ADDRESSES_PROVIDER.getPriceOracle();
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
+    // TODO: why does the line below break?
     IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
 
     SupplyLogic.executeUseReserveAsCollateral(
@@ -385,7 +386,7 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     bytes[] memory priceUpdateData
   ) public payable override {
     // first update price
-    address priceOracle = ADDRESSES_PROVIDER.getPriceOracle();
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
     IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
 
     LiquidationLogic.executeLiquidationCall(
@@ -419,7 +420,7 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     bytes[] memory priceUpdateData
   ) public payable virtual override {
     // first update price
-    address priceOracle = ADDRESSES_PROVIDER.getPriceOracle();
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
     IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
 
     DataTypes.FlashloanParams memory flashParams = DataTypes.FlashloanParams({
@@ -603,7 +604,7 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     bytes[] memory priceUpdateData
   ) public payable virtual override {
     // first update price
-    address priceOracle = ADDRESSES_PROVIDER.getPriceOracle();
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
     IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
 
     DataTypes.FinalizeTransferParams memory params = DataTypes.FinalizeTransferParams({
@@ -719,7 +720,7 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     bytes[] memory priceUpdateData
   ) public payable virtual override {
     // first update price
-    address priceOracle = ADDRESSES_PROVIDER.getPriceOracle();
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
     IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
 
     DataTypes.ExecuteSetUserEModeParams memory params = DataTypes.ExecuteSetUserEModeParams({
@@ -780,5 +781,5 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     );
   }
 
-  receive() external payable;
+  receive() external payable {}
 }

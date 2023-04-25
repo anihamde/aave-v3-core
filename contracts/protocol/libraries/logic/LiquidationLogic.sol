@@ -159,7 +159,7 @@ library LiquidationLogic {
       vars.actualDebtToLiquidate,
       vars.userCollateralBalance,
       vars.liquidationBonus,
-      IPriceOracleGetter(params.priceOracle)
+      IPriceOracleGetter(payable(params.priceOracle))
     );
 
     if (vars.userTotalDebt == vars.actualDebtToLiquidate) {

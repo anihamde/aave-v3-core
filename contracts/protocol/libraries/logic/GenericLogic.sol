@@ -77,7 +77,7 @@ library GenericLogic {
       (vars.eModeLtv, vars.eModeLiqThreshold, vars.eModeAssetPrice) = EModeLogic
         .getEModeConfiguration(
           eModeCategories[params.userEModeCategory],
-          IPriceOracleGetter(params.oracle)
+          IPriceOracleGetter(payable(params.oracle))
         );
     }
 
@@ -116,7 +116,7 @@ library GenericLogic {
       vars.assetPrice = vars.eModeAssetPrice != 0 &&
         params.userEModeCategory == vars.eModeAssetCategory
         ? vars.eModeAssetPrice
-        : IPriceOracleGetter(params.oracle).getAssetPrice(vars.currentReserveAddress);
+        : IPriceOracleGetter(payable(params.oracle)).getAssetPrice(vars.currentReserveAddress);
 
       if (vars.liquidationThreshold != 0 && params.userConfig.isUsingAsCollateral(vars.i)) {
         vars.userBalanceInBaseCurrency = _getUserBalanceInBaseCurrency(
