@@ -27,4 +27,10 @@ interface IPriceOracleGetter {
    * @return The price of the asset
    */
   function getAssetPrice(address asset) external view returns (uint256);
+
+  /**
+   * @notice Updates the Pyth oracle price
+   * @param priceUpdateData The bytes array that holds the encoded price info to update with
+   */
+  function updatePythPrice(bytes[] calldata priceUpdateData) external payable;
 }

@@ -42,16 +42,18 @@ contract L2Pool is Pool, IL2Pool {
   /// @inheritdoc IL2Pool
   function withdraw(bytes32 args) external override {
     (address asset, uint256 amount) = CalldataLogic.decodeWithdrawParams(_reservesList, args);
-
-    withdraw(asset, amount, msg.sender);
+    // TODO: figure out how to pack variable len priceUpdate into L2 encoding
+    bytes[] memory emptyUpdate = new bytes[](0);
+    withdraw(asset, amount, msg.sender, emptyUpdate);
   }
 
   /// @inheritdoc IL2Pool
   function borrow(bytes32 args) external override {
     (address asset, uint256 amount, uint256 interestRateMode, uint16 referralCode) = CalldataLogic
       .decodeBorrowParams(_reservesList, args);
-
-    borrow(asset, amount, interestRateMode, referralCode, msg.sender);
+    // TODO: figure out how to pack variable len priceUpdate into L2 encoding
+    bytes[] memory emptyUpdate = new bytes[](0);
+    borrow(asset, amount, interestRateMode, referralCode, msg.sender, emptyUpdate);
   }
 
   /// @inheritdoc IL2Pool
@@ -111,7 +113,9 @@ contract L2Pool is Pool, IL2Pool {
       _reservesList,
       args
     );
-    setUserUseReserveAsCollateral(asset, useAsCollateral);
+    // TODO: figure out how to pack variable len priceUpdate into L2 encoding
+    bytes[] memory emptyUpdate = new bytes[](0);
+    setUserUseReserveAsCollateral(asset, useAsCollateral, emptyUpdate);
   }
 
   /// @inheritdoc IL2Pool
@@ -123,6 +127,10 @@ contract L2Pool is Pool, IL2Pool {
       uint256 debtToCover,
       bool receiveAToken
     ) = CalldataLogic.decodeLiquidationCallParams(_reservesList, args1, args2);
-    liquidationCall(collateralAsset, debtAsset, user, debtToCover, receiveAToken);
+    // TODO: figure out how to pack variable len priceUpdate into L2 encoding
+    bytes[] memory emptyUpdate = new bytes[](0);
+    liquidationCall(collateralAsset, debtAsset, user, debtToCover, receiveAToken, emptyUpdate);
   }
+
+  // receive() external payable;
 }

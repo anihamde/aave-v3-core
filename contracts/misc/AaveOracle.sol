@@ -123,19 +123,21 @@ contract AaveOracle is IAaveOracle {
     emit PythOracleUpdated(pythOracle, isMock);
   }
 
-  function updatePythPrice(bytes[] calldata priceUpdateData) public payable {
+  function updatePythPrice(bytes[] calldata priceUpdateData) public payable override {
     // Update the prices to the latest available values and pay the required fee for it. The `priceUpdateData` data
     // should be retrieved from a Pyth off-chain Price Service API using the `pyth-evm-js` package.
-    if (_isMock) {
-      uint fee = _pythOracle.getUpdateFee(priceUpdateData);
-      _pythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
-    } else {
-      uint fee = _mockPythOracle.getUpdateFee(priceUpdateData);
-      _mockPythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
+    if (priceUpdateData.length > 0) {
+      if (_isMock) {
+        uint fee = _mockPythOracle.getUpdateFee(priceUpdateData);
+        _mockPythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
+      } else {
+        uint fee = _pythOracle.getUpdateFee(priceUpdateData);
+        _pythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
+      }
     }
   }
 
-  function updateWithPriceFeedUpdateData(
+  function getPriceUpdateDataForOneFeed(
     address id,
     int64 price,
     uint64 conf,
@@ -143,7 +145,7 @@ contract AaveOracle is IAaveOracle {
     int64 emaPrice,
     uint64 emaConf,
     uint64 publishTime
-  ) public payable {
+  ) public view returns (bytes memory) {
     bytes32 priceID = bytes32(uint256(uint160(id)));
     bytes memory priceFeedData = _mockPythOracle.createPriceFeedUpdateData(
       priceID,
@@ -155,9 +157,46 @@ contract AaveOracle is IAaveOracle {
       publishTime
     );
 
-    bytes[] memory updateData = new bytes[](1);
-    updateData[0] = priceFeedData;
-    _mockPythOracle.updatePriceFeeds(updateData);
+    return priceFeedData;
+  }
+
+  function updateWithPriceFeedUpdateData(
+    address id,
+    int64 price,
+    uint64 conf,
+    int32 expo,
+    int64 emaPrice,
+    uint64 emaConf,
+    uint64 publishTime
+  ) public payable {
+    if (_isMock) {
+      bytes memory priceFeedData = getPriceUpdateDataForOneFeed(
+        id,
+        price,
+        conf,
+        expo,
+        emaPrice,
+        emaConf,
+        publishTime
+      );
+      (id, price, conf, expo, emaPrice, emaConf, publishTime);
+
+      bytes[] memory updateData = new bytes[](1);
+      updateData[0] = priceFeedData;
+      _mockPythOracle.updatePriceFeeds(updateData);
+    }
+  }
+
+  function getLastUpdateTime(address asset) public view returns (uint) {
+    bytes32 priceID = assetsIDs[asset];
+    PythStructs.Price memory pythPrice;
+    if (_isMock) {
+      pythPrice = _mockPythOracle.getPriceUnsafe(priceID);
+    } else {
+      pythPrice = _pythOracle.getPriceUnsafe(priceID);
+    }
+
+    return pythPrice.publishTime;
   }
 
   /// @inheritdoc IPriceOracleGetter
