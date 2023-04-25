@@ -52,11 +52,13 @@ makeSuite('Pool: Drop Reserve', (testEnv: TestEnv) => {
 
     await pool.connect(user1.signer).deposit(weth.address, depositedAmount, user1.address, 0);
 
-    await pool.connect(user1.signer).borrow(dai.address, borrowedAmount, 2, 0, user1.address);
+    // empty price update data
+    await pool.connect(user1.signer).borrow(dai.address, borrowedAmount, 2, 0, user1.address, []);
     await expect(configurator.dropReserve(dai.address)).to.be.revertedWith(
       VARIABLE_DEBT_SUPPLY_NOT_ZERO
     );
-    await pool.connect(user1.signer).borrow(dai.address, borrowedAmount, 1, 0, user1.address);
+    // empty price update data
+    await pool.connect(user1.signer).borrow(dai.address, borrowedAmount, 1, 0, user1.address, []);
     await expect(configurator.dropReserve(dai.address)).to.be.revertedWith(STABLE_DEBT_NOT_ZERO);
   });
 
@@ -81,7 +83,8 @@ makeSuite('Pool: Drop Reserve', (testEnv: TestEnv) => {
   it('User 1 withdraw DAI, drop DAI reserve should succeed', async () => {
     const { deployer, pool, dai, configurator, helpersContract } = testEnv;
 
-    await pool.withdraw(dai.address, MAX_UINT_AMOUNT, deployer.address);
+    // empty price update data
+    await pool.withdraw(dai.address, MAX_UINT_AMOUNT, deployer.address, []);
     const reserveCount = (await pool.getReservesList()).length;
     expect(await configurator.dropReserve(dai.address));
 

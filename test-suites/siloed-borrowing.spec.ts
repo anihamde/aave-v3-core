@@ -52,9 +52,10 @@ makeSuite('Siloed borrowing', (testEnv: TestEnv) => {
     await pool
       .connect(users[1].signer)
       .supply(weth.address, wethSupplyAmount, users[1].address, '0');
+    // empty price update data
     await pool
       .connect(users[1].signer)
-      .borrow(dai.address, daiBorrowAmount, RateMode.Variable, '0', users[1].address);
+      .borrow(dai.address, daiBorrowAmount, RateMode.Variable, '0', users[1].address, []);
 
     const debtBalance = await variableDebtDai.balanceOf(users[1].address);
 
@@ -76,9 +77,10 @@ makeSuite('Siloed borrowing', (testEnv: TestEnv) => {
       .supply(usdc.address, usdcSupplyAmount, users[0].address, '0');
 
     await expect(
+      // empty price update data
       pool
         .connect(users[1].signer)
-        .borrow(usdc.address, usdcBorrowAmount, RateMode.Variable, '0', users[1].address)
+        .borrow(usdc.address, usdcBorrowAmount, RateMode.Variable, '0', users[1].address, [])
     ).to.be.revertedWith(SILOED_BORROWING_VIOLATION);
   });
 
@@ -94,9 +96,10 @@ makeSuite('Siloed borrowing', (testEnv: TestEnv) => {
       .connect(users[1].signer)
       .repay(dai.address, MAX_UINT_AMOUNT, RateMode.Variable, users[1].address);
 
+    // empty price update data
     await pool
       .connect(users[1].signer)
-      .borrow(usdc.address, usdcBorrowAmount, RateMode.Variable, '0', users[1].address);
+      .borrow(usdc.address, usdcBorrowAmount, RateMode.Variable, '0', users[1].address, []);
   });
 
   it('User 1 tries to borrow DAI (revert expected)', async () => {
@@ -105,9 +108,10 @@ makeSuite('Siloed borrowing', (testEnv: TestEnv) => {
     const daiBorrowAmount = utils.parseEther('1');
 
     await expect(
+      // empty price update data
       pool
         .connect(users[1].signer)
-        .borrow(dai.address, daiBorrowAmount, RateMode.Variable, '0', users[1].address)
+        .borrow(dai.address, daiBorrowAmount, RateMode.Variable, '0', users[1].address, [])
     ).to.be.revertedWith(SILOED_BORROWING_VIOLATION);
   });
 
@@ -117,14 +121,16 @@ makeSuite('Siloed borrowing', (testEnv: TestEnv) => {
     const wethBorrowAmount = utils.parseEther('0.01');
     const daiBorrowAmount = utils.parseEther('1');
 
+    // empty price update data
     await pool
       .connect(users[1].signer)
-      .borrow(weth.address, wethBorrowAmount, RateMode.Variable, '0', users[1].address);
+      .borrow(weth.address, wethBorrowAmount, RateMode.Variable, '0', users[1].address, []);
 
     await expect(
+      // empty price update data
       pool
         .connect(users[1].signer)
-        .borrow(dai.address, daiBorrowAmount, RateMode.Variable, '0', users[1].address)
+        .borrow(dai.address, daiBorrowAmount, RateMode.Variable, '0', users[1].address, [])
     ).to.be.revertedWith(SILOED_BORROWING_VIOLATION);
   });
 
@@ -158,14 +164,16 @@ makeSuite('Siloed borrowing', (testEnv: TestEnv) => {
     const daiBorrowAmount = utils.parseEther('1');
     const usdcBorrowAmount = utils.parseUnits('1', '6');
 
+    // empty price update data
     await pool
       .connect(users[1].signer)
-      .borrow(dai.address, daiBorrowAmount, RateMode.Variable, '0', users[1].address);
+      .borrow(dai.address, daiBorrowAmount, RateMode.Variable, '0', users[1].address, []);
 
     await expect(
+      // empty price update data
       pool
         .connect(users[1].signer)
-        .borrow(usdc.address, usdcBorrowAmount, RateMode.Variable, '0', users[1].address)
+        .borrow(usdc.address, usdcBorrowAmount, RateMode.Variable, '0', users[1].address, [])
     ).to.be.revertedWith(SILOED_BORROWING_VIOLATION);
   });
 
@@ -176,9 +184,10 @@ makeSuite('Siloed borrowing', (testEnv: TestEnv) => {
 
     const debtBefore = await variableDebtDai.balanceOf(users[1].address);
 
+    // empty price update data
     await pool
       .connect(users[1].signer)
-      .borrow(dai.address, daiBorrowAmount, RateMode.Variable, '0', users[1].address);
+      .borrow(dai.address, daiBorrowAmount, RateMode.Variable, '0', users[1].address, []);
 
     const debtAfter = await variableDebtDai.balanceOf(users[1].address);
 

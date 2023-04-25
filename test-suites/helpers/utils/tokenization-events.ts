@@ -140,7 +140,8 @@ export const withdraw = async (
 
   const previousIndex = await aToken.getPreviousIndex(user.address);
 
-  const tx = await pool.connect(user.signer).withdraw(underlying, amount, to);
+  // empty price update data
+  const tx = await pool.connect(user.signer).withdraw(underlying, amount, to, []);
   const rcpt = await tx.wait();
 
   const indexAfter = await pool.getReserveNormalizedIncome(underlying);
@@ -332,9 +333,10 @@ export const variableBorrow = async (
 
   let previousIndex = await variableDebtToken.getPreviousIndex(onBehalfOf);
 
+  // empty price update data
   const tx = await pool
     .connect(user.signer)
-    .borrow(underlying, amount, RateMode.Variable, 0, onBehalfOf);
+    .borrow(underlying, amount, RateMode.Variable, 0, onBehalfOf, []);
   const rcpt = await tx.wait();
 
   const indexAfter = await pool.getReserveNormalizedVariableDebt(underlying);
@@ -450,9 +452,10 @@ export const stableBorrow = async (
   const principalBalance = await stableDebtToken.principalBalanceOf(onBehalfOf);
   const lastTimestamp = await stableDebtToken.getUserLastUpdated(onBehalfOf);
 
+  // empty price update data
   const tx = await pool
     .connect(user.signer)
-    .borrow(underlying, amount, RateMode.Stable, 0, onBehalfOf);
+    .borrow(underlying, amount, RateMode.Stable, 0, onBehalfOf, []);
   const rcpt = await tx.wait();
 
   const { txTimestamp } = await getTxCostAndTimestamp(rcpt);

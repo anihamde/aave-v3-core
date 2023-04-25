@@ -84,9 +84,10 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
 
     const { availableBorrowsBase } = await pool.getUserAccountData(borrower.address);
     let toBorrow = availableBorrowsBase.div(daiPrice);
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(usdc.address, toBorrow, RateMode.Variable, 0, borrower.address);
+      .borrow(usdc.address, toBorrow, RateMode.Variable, 0, borrower.address, []);
 
     //3. Liquidator supplies 10000 USDC and borrow 5 ETH
     await usdc
@@ -102,6 +103,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
         0
       );
 
+    // empty price update data
     await pool
       .connect(liquidator.signer)
       .borrow(
@@ -109,7 +111,8 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
         await convertToCurrencyDecimals(weth.address, '1'),
         RateMode.Variable,
         0,
-        liquidator.address
+        liquidator.address,
+        []
       );
 
     //4. Advance block to make ETH income index > 1
@@ -130,9 +133,10 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       const tmpSnap = await evmSnapshot();
       await increaseTime(i);
       expect(
+        // empty price update data
         await pool
           .connect(liquidator.signer)
-          .liquidationCall(weth.address, usdc.address, borrower.address, MAX_UINT_AMOUNT, false)
+          .liquidationCall(weth.address, usdc.address, borrower.address, MAX_UINT_AMOUNT, false, [])
       );
 
       if (i !== tryMaxTimes) {
@@ -229,9 +233,10 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       userGlobalData.availableBorrowsBase.div(daiPrice).percentMul(9500).toString()
     );
 
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(dai.address, amountDAIToBorrow, RateMode.Stable, '0', borrower.address);
+      .borrow(dai.address, amountDAIToBorrow, RateMode.Stable, '0', borrower.address, []);
 
     const userGlobalDataAfter = await pool.getUserAccountData(borrower.address);
 
@@ -301,9 +306,10 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
 
     await increaseTime(100);
 
+    // empty price update data
     const tx = await pool
       .connect(liquidator.signer)
-      .liquidationCall(weth.address, dai.address, borrower.address, amountToLiquidate, false);
+      .liquidationCall(weth.address, dai.address, borrower.address, amountToLiquidate, false, []);
 
     const userReserveDataAfter = await getUserData(
       pool,
@@ -464,9 +470,10 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       userGlobalData.availableBorrowsBase.div(usdcPrice).percentMul(9502).toString()
     );
 
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address);
+      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address, []);
 
     //drops HF below 1
     await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
@@ -502,9 +509,10 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       weth.address
     );
 
+    // empty price update data
     await pool
       .connect(liquidator.signer)
-      .liquidationCall(weth.address, usdc.address, borrower.address, amountToLiquidate, false);
+      .liquidationCall(weth.address, usdc.address, borrower.address, amountToLiquidate, false, []);
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
       usdc.address,
@@ -667,9 +675,10 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     );
     const treasuryBalanceBefore = treasuryDataBefore.currentATokenBalance;
 
+    // empty price update data
     await pool
       .connect(liquidator.signer)
-      .liquidationCall(aave.address, usdc.address, borrower.address, amountToLiquidate, true);
+      .liquidationCall(aave.address, usdc.address, borrower.address, amountToLiquidate, true, []);
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
       usdc.address,
@@ -834,9 +843,10 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     );
     const treasuryBalanceBefore = treasuryDataBefore.currentATokenBalance;
 
+    // empty price update data
     await pool
       .connect(liquidator.signer)
-      .liquidationCall(aave.address, usdc.address, borrower.address, amountToLiquidate, true);
+      .liquidationCall(aave.address, usdc.address, borrower.address, amountToLiquidate, true, []);
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
       usdc.address,

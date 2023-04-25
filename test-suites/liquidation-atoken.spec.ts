@@ -92,9 +92,10 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
       dai.address,
       userGlobalData.availableBorrowsBase.div(daiPrice.toString()).percentMul(9500).toString()
     );
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, '0', borrower.address);
+      .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, '0', borrower.address, []);
 
     const userGlobalDataAfter = await pool.getUserAccountData(borrower.address);
 
@@ -105,7 +106,8 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
 
     //someone tries to liquidate user 2
     await expect(
-      pool.liquidationCall(weth.address, dai.address, borrower.address, 1, true)
+      // empty price update data
+      pool.liquidationCall(weth.address, dai.address, borrower.address, 1, true, [])
     ).to.be.revertedWith(HEALTH_FACTOR_NOT_BELOW_THRESHOLD);
   });
 
@@ -135,7 +137,8 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
     } = testEnv;
     //user 2 tries to borrow
     await expect(
-      pool.liquidationCall(weth.address, weth.address, borrower.address, oneEther, true)
+      // empty price update data
+      pool.liquidationCall(weth.address, weth.address, borrower.address, oneEther, true, [])
     ).to.be.revertedWith(SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER);
   });
 
@@ -147,7 +150,8 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
     } = testEnv;
 
     await expect(
-      pool.liquidationCall(dai.address, dai.address, borrower.address, oneEther, true)
+      // empty price update data
+      pool.liquidationCall(dai.address, dai.address, borrower.address, oneEther, true, [])
     ).to.be.revertedWith(COLLATERAL_CANNOT_BE_LIQUIDATED);
   });
 
@@ -190,12 +194,14 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
     const amountToLiquidate = userReserveDataBefore.currentVariableDebt.div(2);
 
     // The supply is the same, but there should be a change in who has what. The liquidator should have received what the borrower lost.
+    // empty price update data
     const tx = await pool.liquidationCall(
       weth.address,
       dai.address,
       borrower.address,
       amountToLiquidate,
-      true
+      true,
+      []
     );
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
@@ -354,9 +360,10 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
       userGlobalData.availableBorrowsBase.div(usdcPrice).percentMul(9502).toString()
     );
 
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address);
+      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address, []);
 
     //drops HF below 1
 
@@ -385,12 +392,14 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
 
     const amountToLiquidate = userReserveDataBefore.currentStableDebt.div(2);
 
+    // empty price update data
     await pool.liquidationCall(
       weth.address,
       usdc.address,
       borrower.address,
       amountToLiquidate,
-      true
+      true,
+      []
     );
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(

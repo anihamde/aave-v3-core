@@ -87,6 +87,7 @@ makeSuite('Pool: liquidity indexes misc tests', (testEnv: TestEnv) => {
 
     const wethFlashBorrowedAmount = ethers.utils.parseEther('0.8');
 
+    // empty price update data
     await pool.flashLoan(
       _mockFlashLoanReceiver.address,
       [weth.address],
@@ -94,9 +95,11 @@ makeSuite('Pool: liquidity indexes misc tests', (testEnv: TestEnv) => {
       [0],
       _mockFlashLoanReceiver.address,
       '0x10',
-      '0'
+      '0',
+      []
     );
 
+    // empty price update data
     await pool.flashLoan(
       _mockFlashLoanReceiver.address,
       [weth.address],
@@ -104,7 +107,8 @@ makeSuite('Pool: liquidity indexes misc tests', (testEnv: TestEnv) => {
       [0],
       _mockFlashLoanReceiver.address,
       '0x10',
-      '0'
+      '0',
+      []
     );
 
     const wethReserveDataAfterSecondFlash = await helpersContract.getReserveData(weth.address);

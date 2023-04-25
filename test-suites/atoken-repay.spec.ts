@@ -57,7 +57,10 @@ makeSuite('AToken: Repay', (testEnv: TestEnv) => {
     expect(await pool.connect(user1.signer).deposit(weth.address, wethAmount, user1.address, 0));
 
     expect(
-      await pool.connect(user1.signer).borrow(dai.address, daiAmount.div(2), 2, 0, user1.address)
+      // empty price update data
+      await pool
+        .connect(user1.signer)
+        .borrow(dai.address, daiAmount.div(2), 2, 0, user1.address, [])
     );
   });
 
@@ -228,9 +231,10 @@ makeSuite('AToken: Repay', (testEnv: TestEnv) => {
     await pool.connect(user.signer).supply(weth.address, collateralAmount, user.address, 0);
 
     const borrowAmount = parseUnits('500', 18);
+    // empty price update data
     await pool
       .connect(user.signer)
-      .borrow(dai.address, borrowAmount, RateMode.Variable, 0, user.address);
+      .borrow(dai.address, borrowAmount, RateMode.Variable, 0, user.address, []);
 
     // Now we repay 250 with aTokens
     const repayAmount = parseUnits('250', 18);

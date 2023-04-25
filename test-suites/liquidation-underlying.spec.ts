@@ -37,7 +37,15 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
     await configurator.setReserveActive(weth.address, false);
 
     await expect(
-      pool.liquidationCall(weth.address, dai.address, user.address, utils.parseEther('1000'), false)
+      // empty price update data
+      pool.liquidationCall(
+        weth.address,
+        dai.address,
+        user.address,
+        utils.parseEther('1000'),
+        false,
+        []
+      )
     ).to.be.revertedWith('27');
 
     await configurator.setReserveActive(weth.address, true);
@@ -45,7 +53,15 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
     await configurator.setReserveActive(dai.address, false);
 
     await expect(
-      pool.liquidationCall(weth.address, dai.address, user.address, utils.parseEther('1000'), false)
+      // empty price update data
+      pool.liquidationCall(
+        weth.address,
+        dai.address,
+        user.address,
+        utils.parseEther('1000'),
+        false,
+        []
+      )
     ).to.be.revertedWith('27');
 
     await configurator.setReserveActive(dai.address, true);
@@ -99,9 +115,10 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
       userGlobalData.availableBorrowsBase.div(daiPrice).percentMul(9500).toString()
     );
 
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(dai.address, amountDAIToBorrow, RateMode.Stable, '0', borrower.address);
+      .borrow(dai.address, amountDAIToBorrow, RateMode.Stable, '0', borrower.address, []);
 
     const userGlobalDataAfter = await pool.getUserAccountData(borrower.address);
 
@@ -157,9 +174,10 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
 
     await increaseTime(100);
 
+    // empty price update data
     const tx = await pool
       .connect(liquidator.signer)
-      .liquidationCall(weth.address, dai.address, borrower.address, amountToLiquidate, false);
+      .liquidationCall(weth.address, dai.address, borrower.address, amountToLiquidate, false, []);
 
     const userReserveDataAfter = await getUserData(
       pool,
@@ -293,9 +311,10 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
       userGlobalData.availableBorrowsBase.div(usdcPrice).percentMul(9502).toString()
     );
 
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address);
+      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address, []);
 
     //drops HF below 1
     await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
@@ -319,9 +338,10 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
 
     const amountToLiquidate = userReserveDataBefore.currentStableDebt.div(2);
 
+    // empty price update data
     await pool
       .connect(liquidator.signer)
-      .liquidationCall(weth.address, usdc.address, borrower.address, amountToLiquidate, false);
+      .liquidationCall(weth.address, usdc.address, borrower.address, amountToLiquidate, false, []);
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
       usdc.address,
@@ -442,9 +462,10 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
     const collateralPrice = await oracle.getAssetPrice(aave.address);
     const principalPrice = await oracle.getAssetPrice(usdc.address);
 
+    // empty price update data
     await pool
       .connect(liquidator.signer)
-      .liquidationCall(aave.address, usdc.address, borrower.address, amountToLiquidate, false);
+      .liquidationCall(aave.address, usdc.address, borrower.address, amountToLiquidate, false, []);
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
       usdc.address,

@@ -107,7 +107,8 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
       .connect(borrower.signer)
       .supply(usdc.address, utils.parseUnits('10000', 6), borrower.address, 0);
 
-    await pool.connect(borrower.signer).setUserEMode(CATEGORY.id);
+    // empty price update data
+    await pool.connect(borrower.signer).setUserEMode(CATEGORY.id, []);
   });
 
   it('Borrow as much DAI as possible', async () => {
@@ -126,9 +127,10 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
       userGlobalData.availableBorrowsBase.div(daiPrice).toString()
     );
 
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, 0, borrower.address);
+      .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, 0, borrower.address, []);
   });
 
   it('Drop HF below 1', async () => {
@@ -170,9 +172,10 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
     const amountToLiquidate = userReserveDataBefore.currentVariableDebt.div(2);
     const userGlobalDataBefore = await pool.getUserAccountData(borrower.address);
 
+    // empty price update data
     const tx = await pool
       .connect(liquidator.signer)
-      .liquidationCall(usdc.address, dai.address, borrower.address, amountToLiquidate, false);
+      .liquidationCall(usdc.address, dai.address, borrower.address, amountToLiquidate, false, []);
 
     const daiReserveDataAfter = await getReserveData(helpersContract, dai.address);
     const usdcReserveDataAfter = await getReserveData(helpersContract, usdc.address);

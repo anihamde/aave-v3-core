@@ -104,7 +104,8 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       .connect(depositor.signer)
       .supply(usdc.address, utils.parseUnits('10000', 6), depositor.address, 0);
 
-    await pool.connect(depositor.signer).setUserEMode(CATEGORY.id);
+    // empty price update data
+    await pool.connect(depositor.signer).setUserEMode(CATEGORY.id, []);
     expect(await pool.getUserEMode(depositor.address)).to.be.eq(CATEGORY.id);
   });
 
@@ -124,9 +125,10 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       userGlobalData.availableBorrowsBase.div(daiPrice).toString()
     );
 
+    // empty price update data
     await pool
       .connect(depositor.signer)
-      .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, 0, depositor.address);
+      .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, 0, depositor.address, []);
   });
 
   it('Drop HF below 1', async () => {
@@ -182,9 +184,10 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
 
     const userGlobalDataBefore = await pool.getUserAccountData(borrower.address);
 
+    // empty price update data
     await pool
       .connect(liquidator.signer)
-      .liquidationCall(usdc.address, dai.address, borrower.address, amountToLiquidate, false);
+      .liquidationCall(usdc.address, dai.address, borrower.address, amountToLiquidate, false, []);
 
     const daiReserveDataAfter = await getReserveData(helpersContract, dai.address);
     const usdcReserveDataAfter = await getReserveData(helpersContract, usdc.address);
@@ -316,16 +319,18 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     );
 
     // Activate emode
-    expect(await pool.connect(user1.signer).setUserEMode(CATEGORY.id));
+    // empty price update data
+    expect(await pool.connect(user1.signer).setUserEMode(CATEGORY.id, []));
 
     // Borrow a as much usdc as possible
     const userData = await pool.getUserAccountData(user1.address);
     const toBorrow = userData.availableBorrowsBase.div(100);
 
     expect(
+      // empty price update data
       await pool
         .connect(user1.signer)
-        .borrow(usdc.address, toBorrow, RateMode.Variable, 0, user1.address)
+        .borrow(usdc.address, toBorrow, RateMode.Variable, 0, user1.address, [])
     );
 
     // Drop weth price
@@ -342,9 +347,10 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     const balanceBefore = await aWETH.balanceOf(user1.address);
 
     // Liquidate
+    // empty price update data
     await pool
       .connect(user2.signer)
-      .liquidationCall(weth.address, usdc.address, user1.address, toBorrow.div(2), false);
+      .liquidationCall(weth.address, usdc.address, user1.address, toBorrow.div(2), false, []);
 
     const balanceAfter = await aWETH.balanceOf(user1.address);
 
@@ -444,16 +450,18 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     );
 
     // Activate emode
-    expect(await pool.connect(user1.signer).setUserEMode(CATEGORY.id));
+    // empty price update data
+    expect(await pool.connect(user1.signer).setUserEMode(CATEGORY.id, []));
 
     // Borrow as much usdc as possible
     const userData = await pool.getUserAccountData(user1.address);
     const toBorrow = userData.availableBorrowsBase.div(100);
 
     expect(
+      // empty price update data
       await pool
         .connect(user1.signer)
-        .borrow(usdc.address, toBorrow, RateMode.Variable, 0, user1.address)
+        .borrow(usdc.address, toBorrow, RateMode.Variable, 0, user1.address, [])
     );
 
     // Increase EMODE oracle price
@@ -470,9 +478,10 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     const balanceBefore = await aDai.balanceOf(user1.address);
 
     // Liquidate
+    // empty price update data
     await pool
       .connect(user2.signer)
-      .liquidationCall(dai.address, usdc.address, user1.address, toBorrow.div(2), false);
+      .liquidationCall(dai.address, usdc.address, user1.address, toBorrow.div(2), false, []);
 
     const balanceAfter = await aDai.balanceOf(user1.address);
 
@@ -572,16 +581,18 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     );
 
     // Activate emode
-    expect(await pool.connect(user1.signer).setUserEMode(CATEGORY.id));
+    // empty price update data
+    expect(await pool.connect(user1.signer).setUserEMode(CATEGORY.id, []));
 
     // Borrow a as much usdc as possible
     const userData = await pool.getUserAccountData(user1.address);
     const toBorrow = userData.availableBorrowsBase.div(100);
 
     expect(
+      // empty price update data
       await pool
         .connect(user1.signer)
-        .borrow(usdc.address, toBorrow, RateMode.Variable, 0, user1.address)
+        .borrow(usdc.address, toBorrow, RateMode.Variable, 0, user1.address, [])
     );
 
     // Drop weth price
@@ -598,9 +609,10 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     const balanceBefore = await aWETH.balanceOf(user1.address);
 
     // Liquidate
+    // empty price update data
     await pool
       .connect(user2.signer)
-      .liquidationCall(weth.address, usdc.address, user1.address, toBorrow.div(2), false);
+      .liquidationCall(weth.address, usdc.address, user1.address, toBorrow.div(2), false, []);
 
     const balanceAfter = await aWETH.balanceOf(user1.address);
 

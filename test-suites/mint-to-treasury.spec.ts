@@ -24,9 +24,10 @@ makeSuite('Mint To Treasury', (testEnv: TestEnv) => {
     );
 
     await expect(
+      // empty price update data
       await pool
         .connect(users[0].signer)
-        .borrow(dai.address, amountDAItoBorrow, RateMode.Variable, '0', users[0].address)
+        .borrow(dai.address, amountDAItoBorrow, RateMode.Variable, '0', users[0].address, [])
     );
 
     const { reserveFactor } = await helpersContract.getReserveConfigurationData(dai.address);

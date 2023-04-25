@@ -71,6 +71,7 @@ makeSuite('VariableDebtToken', (testEnv: TestEnv) => {
     await pool
       .connect(users[1].signer)
       .deposit(weth.address, utils.parseEther('10'), users[1].address, 0);
+    // empty price update data
     await pool
       .connect(users[1].signer)
       .borrow(
@@ -78,7 +79,8 @@ makeSuite('VariableDebtToken', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(dai.address, '200'),
         RateMode.Variable,
         0,
-        users[1].address
+        users[1].address,
+        []
       );
 
     const scaledUserBalanceAndSupplyUser0After =
@@ -328,9 +330,10 @@ makeSuite('VariableDebtToken', (testEnv: TestEnv) => {
     // User1 borrows 100 DAI
     const borrowAmount = utils.parseUnits('100', 18);
     expect(
+      // empty price update data
       await pool
         .connect(user1.signer)
-        .borrow(dai.address, borrowAmount, RateMode.Variable, 0, user1.address)
+        .borrow(dai.address, borrowAmount, RateMode.Variable, 0, user1.address, [])
     );
 
     // User1 approves user2 to borrow 1000 DAI
@@ -349,9 +352,10 @@ makeSuite('VariableDebtToken', (testEnv: TestEnv) => {
     // User2 borrows 100 DAI on behalf of user1
     const borrowOnBehalfAmount = utils.parseUnits('100', 18);
     const tx = await waitForTx(
+      // empty price update data
       await pool
         .connect(user2.signer)
-        .borrow(dai.address, borrowOnBehalfAmount, RateMode.Variable, 0, user1.address)
+        .borrow(dai.address, borrowOnBehalfAmount, RateMode.Variable, 0, user1.address, [])
     );
 
     const previousIndexUser1After = await variableDebtToken.getPreviousIndex(user1.address);
@@ -394,9 +398,10 @@ makeSuite('VariableDebtToken', (testEnv: TestEnv) => {
     // Turn off automining - pretty sure that coverage is getting messed up here.
     await setAutomine(false);
     // Borrow 500 dai
+    // empty price update data
     await pool
       .connect(user.signer)
-      .borrow(dai.address, utils.parseEther('500'), RateMode.Variable, 0, user.address);
+      .borrow(dai.address, utils.parseEther('500'), RateMode.Variable, 0, user.address, []);
 
     // Turn on automining, but not mine a new block until next tx
     await setAutomineEvm(true);
@@ -457,9 +462,10 @@ makeSuite('VariableDebtToken', (testEnv: TestEnv) => {
     await setAutomine(false);
 
     // User2 borrows 2 DAI on behalf of User1
+    // empty price update data
     await pool
       .connect(user2.signer)
-      .borrow(dai.address, utils.parseEther('2'), RateMode.Variable, 0, user1.address);
+      .borrow(dai.address, utils.parseEther('2'), RateMode.Variable, 0, user1.address, []);
 
     // Turn on automining, but not mine a new block until next tx
     await setAutomineEvm(true);
@@ -521,9 +527,10 @@ makeSuite('VariableDebtToken', (testEnv: TestEnv) => {
     await setAutomine(false);
 
     // User2 borrows 2 DAI on behalf of User1
+    // empty price update data
     await pool
       .connect(user2.signer)
-      .borrow(dai.address, utils.parseEther('2'), RateMode.Variable, 0, user1.address);
+      .borrow(dai.address, utils.parseEther('2'), RateMode.Variable, 0, user1.address, []);
 
     // Turn on automining, but not mine a new block until next tx
     await setAutomineEvm(true);

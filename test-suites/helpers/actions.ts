@@ -247,7 +247,8 @@ export const withdraw = async (
 
   if (expectedResult === 'success') {
     const txResult = await waitForTx(
-      await pool.connect(user.signer).withdraw(reserve, amountToWithdraw, user.address)
+      // empty price update data
+      await pool.connect(user.signer).withdraw(reserve, amountToWithdraw, user.address, [])
     );
 
     const {
@@ -286,7 +287,8 @@ export const withdraw = async (
     // });
   } else if (expectedResult === 'revert') {
     await expect(
-      pool.connect(user.signer).withdraw(reserve, amountToWithdraw, user.address),
+      // empty price update data
+      pool.connect(user.signer).withdraw(reserve, amountToWithdraw, user.address, []),
       revertMessage
     ).to.be.reverted;
   }
@@ -366,9 +368,10 @@ export const borrow = async (
 
   const amountToBorrow = await convertToCurrencyDecimals(reserve, amount);
 
+  // empty price update data
   const tx = pool
     .connect(user.signer)
-    .borrow(reserve, amountToBorrow, interestRateMode, '0', onBehalfOf);
+    .borrow(reserve, amountToBorrow, interestRateMode, '0', onBehalfOf, []);
 
   if (expectedResult === 'success') {
     const txResult = await waitForTx(await tx);
@@ -816,7 +819,10 @@ export const setUseAsCollateral = async (
 
   if (expectedResult === 'success') {
     const txResult = await waitForTx(
-      await pool.connect(user.signer).setUserUseReserveAsCollateral(reserve, useAsCollateralBool)
+      // empty price update data
+      await pool
+        .connect(user.signer)
+        .setUserUseReserveAsCollateral(reserve, useAsCollateralBool, [])
     );
 
     const { txCost } = await getTxCostAndTimestamp(txResult);
@@ -844,7 +850,8 @@ export const setUseAsCollateral = async (
     // }
   } else if (expectedResult === 'revert') {
     await expect(
-      pool.connect(user.signer).setUserUseReserveAsCollateral(reserve, useAsCollateralBool),
+      // empty price update data
+      pool.connect(user.signer).setUserUseReserveAsCollateral(reserve, useAsCollateralBool, []),
       revertMessage
     ).to.be.reverted;
   }

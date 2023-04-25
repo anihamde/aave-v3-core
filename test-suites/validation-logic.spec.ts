@@ -124,9 +124,10 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     await dai.connect(user.signer).transfer(aDai.address, utils.parseEther('1000'));
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
-        .borrow(dai.address, utils.parseEther('1000'), RateMode.Variable, 0, user.address)
+        .borrow(dai.address, utils.parseEther('1000'), RateMode.Variable, 0, user.address, [])
     ).to.be.revertedWith(RESERVE_INACTIVE);
   });
 
@@ -155,9 +156,10 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     expect(configAfter.isFrozen).to.be.eq(true);
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
-        .borrow(dai.address, utils.parseEther('1000'), RateMode.Variable, 0, user.address)
+        .borrow(dai.address, utils.parseEther('1000'), RateMode.Variable, 0, user.address, [])
     ).to.be.revertedWith(RESERVE_FROZEN);
   });
 
@@ -166,7 +168,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     const user = users[0];
 
     await expect(
-      pool.connect(user.signer).borrow(dai.address, 0, RateMode.Variable, 0, user.address)
+      // empty price update data
+      pool.connect(user.signer).borrow(dai.address, 0, RateMode.Variable, 0, user.address, [])
     ).to.be.revertedWith(INVALID_AMOUNT);
   });
 
@@ -195,9 +198,10 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     expect(configAfter.borrowingEnabled).to.be.eq(false);
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
-        .borrow(dai.address, utils.parseEther('1000'), RateMode.Variable, 0, user.address)
+        .borrow(dai.address, utils.parseEther('1000'), RateMode.Variable, 0, user.address, [])
     ).to.be.revertedWith(BORROWING_NOT_ENABLED);
   });
 
@@ -219,9 +223,10 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     expect(configAfter.stableBorrowRateEnabled).to.be.eq(false);
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
-        .borrow(dai.address, utils.parseEther('500'), RateMode.Stable, 0, user.address)
+        .borrow(dai.address, utils.parseEther('500'), RateMode.Stable, 0, user.address, [])
     ).to.be.revertedWith(STABLE_BORROWING_NOT_ENABLED);
   });
 
@@ -256,6 +261,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
         0
       );
 
+    // empty price update data
     await pool
       .connect(user.signer)
       .borrow(
@@ -263,7 +269,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(dai.address, '1000'),
         RateMode.Variable,
         0,
-        user.address
+        user.address,
+        []
       );
 
     const daiPrice = await oracle.getAssetPrice(dai.address);
@@ -271,6 +278,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
         .borrow(
@@ -278,7 +286,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
           await convertToCurrencyDecimals(dai.address, '200'),
           RateMode.Variable,
           0,
-          user.address
+          user.address,
+          []
         )
     ).to.be.revertedWith(HEALTH_FACTOR_LOWER_THAN_LIQUIDATION_THRESHOLD);
   });
@@ -304,9 +313,10 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
       .deposit(usdc.address, utils.parseEther('10000'), user.address, 0);
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
-        .borrow(dai.address, utils.parseEther('500'), RateMode.Stable, 0, user.address)
+        .borrow(dai.address, utils.parseEther('500'), RateMode.Stable, 0, user.address, [])
     ).to.be.revertedWith(COLLATERAL_SAME_AS_BORROWING_CURRENCY);
   });
 
@@ -326,9 +336,10 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
       .deposit(usdc.address, utils.parseEther('10000'), user.address, 0);
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
-        .borrow(dai.address, utils.parseEther('1500'), RateMode.Stable, 0, user.address)
+        .borrow(dai.address, utils.parseEther('1500'), RateMode.Stable, 0, user.address, [])
     ).to.be.revertedWith(AMOUNT_BIGGER_THAN_MAX_LOAN_SIZE_STABLE);
   });
 
@@ -363,6 +374,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
         0
       );
 
+    // empty price update data
     await pool
       .connect(borrower.signer)
       .borrow(
@@ -370,14 +382,16 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(dai.address, '250'),
         RateMode.Variable,
         0,
-        borrower.address
+        borrower.address,
+        []
       );
 
     // Try to liquidate the borrower
     await expect(
+      // empty price update data
       pool
         .connect(depositor.signer)
-        .liquidationCall(usdc.address, dai.address, borrower.address, 0, false)
+        .liquidationCall(usdc.address, dai.address, borrower.address, 0, false, [])
     ).to.be.revertedWith(HEALTH_FACTOR_NOT_BELOW_THRESHOLD);
   });
 
@@ -419,9 +433,10 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     await dai.connect(user.signer)['mint(uint256)'](utils.parseEther('2000'));
     await dai.connect(user.signer).transfer(aDai.address, utils.parseEther('2000'));
 
+    // empty price update data
     await pool
       .connect(user.signer)
-      .borrow(dai.address, utils.parseEther('250'), RateMode.Stable, 0, user.address);
+      .borrow(dai.address, utils.parseEther('250'), RateMode.Stable, 0, user.address, []);
 
     await expect(
       pool
@@ -442,9 +457,10 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     await dai.connect(user.signer).approve(pool.address, MAX_UINT_AMOUNT);
     await pool.connect(user.signer).deposit(dai.address, utils.parseEther('2000'), user.address, 0);
 
+    // empty price update data
     await pool
       .connect(user.signer)
-      .borrow(dai.address, utils.parseEther('250'), RateMode.Variable, 0, user.address);
+      .borrow(dai.address, utils.parseEther('250'), RateMode.Variable, 0, user.address, []);
 
     await expect(
       pool
@@ -545,6 +561,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
       .connect(user.signer)
       .deposit(dai.address, await convertToCurrencyDecimals(dai.address, '5000'), user.address, 0);
 
+    // empty price update data
     await pool
       .connect(user.signer)
       .borrow(
@@ -552,7 +569,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(dai.address, '500'),
         RateMode.Variable,
         0,
-        user.address
+        user.address,
+        []
       );
 
     await expect(
@@ -580,9 +598,10 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
       .connect(user.signer)
       .deposit(usdc.address, utils.parseEther('10000'), user.address, 0);
 
+    // empty price update data
     await pool
       .connect(user.signer)
-      .borrow(dai.address, utils.parseEther('500'), RateMode.Variable, 0, user.address);
+      .borrow(dai.address, utils.parseEther('500'), RateMode.Variable, 0, user.address, []);
 
     await expect(
       pool.connect(user.signer).swapBorrowRateMode(dai.address, RateMode.Variable)
@@ -633,11 +652,13 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     expect(await aDai.connect(poolSigner).mint(user.address, user.address, 1, 1));
 
     await expect(
-      pool.connect(user.signer).setUserUseReserveAsCollateral(dai.address, true)
+      // empty price update data
+      pool.connect(user.signer).setUserUseReserveAsCollateral(dai.address, true, [])
     ).to.be.revertedWith(RESERVE_INACTIVE);
 
     await expect(
-      pool.connect(user.signer).setUserUseReserveAsCollateral(dai.address, false)
+      // empty price update data
+      pool.connect(user.signer).setUserUseReserveAsCollateral(dai.address, false, [])
     ).to.be.revertedWith(RESERVE_INACTIVE);
   });
 
@@ -646,11 +667,13 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     const user = users[0];
 
     await expect(
-      pool.connect(user.signer).setUserUseReserveAsCollateral(dai.address, true)
+      // empty price update data
+      pool.connect(user.signer).setUserUseReserveAsCollateral(dai.address, true, [])
     ).to.be.revertedWith(UNDERLYING_BALANCE_ZERO);
 
     await expect(
-      pool.connect(user.signer).setUserUseReserveAsCollateral(dai.address, false)
+      // empty price update data
+      pool.connect(user.signer).setUserUseReserveAsCollateral(dai.address, false, [])
     ).to.be.revertedWith(UNDERLYING_BALANCE_ZERO);
   });
 
@@ -659,6 +682,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     const user = users[0];
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
         .flashLoan(
@@ -668,7 +692,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
           [RateMode.Variable, RateMode.Variable],
           user.address,
           '0x00',
-          0
+          0,
+          []
         )
     ).to.be.revertedWith(INCONSISTENT_FLASHLOAN_PARAMS);
   });
@@ -687,6 +712,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     expect(await configurator.connect(poolAdmin.signer).setReserveActive(dai.address, false));
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
         .flashLoan(
@@ -696,7 +722,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
           [RateMode.Variable, RateMode.Variable],
           user.address,
           '0x00',
-          0
+          0,
+          []
         )
     ).to.be.revertedWith(RESERVE_INACTIVE);
   });
@@ -739,7 +766,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
       users: [user],
     } = testEnv;
 
-    await expect(pool.connect(user.signer).setUserEMode(101)).to.be.revertedWith(
+    // empty price update data
+    await expect(pool.connect(user.signer).setUserEMode(101, [])).to.be.revertedWith(
       INCONSISTENT_EMODE_CATEGORY
     );
   });
@@ -758,7 +786,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
         .setEModeCategory('101', '9800', '9900', '10100', constants.AddressZero, 'INCONSISTENT')
     );
 
-    await pool.connect(user.signer).setUserEMode(101);
+    // empty price update data
+    await pool.connect(user.signer).setUserEMode(101, []);
   });
 
   it('validateSetUserEMode() with categoryId == 0', async () => {
@@ -773,7 +802,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     await dai.connect(user.signer).approve(pool.address, MAX_UINT_AMOUNT);
     await pool.connect(user.signer).supply(dai.address, parseUnits('1000', 18), user.address, 0);
 
-    await pool.connect(user.signer).setUserEMode(0);
+    // empty price update data
+    await pool.connect(user.signer).setUserEMode(0, []);
 
     expect(await pool.getUserEMode(user.address)).to.be.eq(0);
   });
@@ -802,12 +832,14 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
       .connect(poolAdmin.signer)
       .setEModeCategory('101', '9800', '9900', '10100', constants.AddressZero, 'NO-ASSETS');
 
-    await pool.connect(user.signer).setUserEMode(101);
+    // empty price update data
+    await pool.connect(user.signer).setUserEMode(101, []);
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
-        .borrow(usdc.address, parseUnits('100', 6), RateMode.Variable, 0, user.address)
+        .borrow(usdc.address, parseUnits('100', 6), RateMode.Variable, 0, user.address, [])
     ).to.be.revertedWith(INCONSISTENT_EMODE_CATEGORY);
   });
 
@@ -838,12 +870,14 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
       userGlobalData.availableBorrowsBase.div(usdcPrice).toString()
     );
 
+    // empty price update data
     await pool
       .connect(user.signer)
-      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Variable, 0, user.address);
+      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Variable, 0, user.address, []);
 
     await expect(
-      pool.connect(user.signer).withdraw(dai.address, parseUnits('500', 18), user.address)
+      // empty price update data
+      pool.connect(user.signer).withdraw(dai.address, parseUnits('500', 18), user.address, [])
     ).to.be.revertedWith(HEALTH_FACTOR_LOWER_THAN_LIQUIDATION_THRESHOLD);
   });
 
@@ -872,9 +906,10 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     await pool.connect(user.signer).supply(dai.address, parseUnits('1000', 18), user.address, 0);
 
     // Borrow usdc
+    // empty price update data
     await pool
       .connect(user.signer)
-      .borrow(usdc.address, parseUnits('500', 6), RateMode.Variable, 0, user.address);
+      .borrow(usdc.address, parseUnits('500', 6), RateMode.Variable, 0, user.address, []);
 
     // Drop LTV
     const daiData = await helpersContract.getReserveConfigurationData(dai.address);
@@ -890,7 +925,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
 
     // Withdraw all my dai
     await expect(
-      pool.connect(user.signer).withdraw(dai.address, parseUnits('500', 18), user.address)
+      // empty price update data
+      pool.connect(user.signer).withdraw(dai.address, parseUnits('500', 18), user.address, [])
     ).to.be.revertedWith(HEALTH_FACTOR_LOWER_THAN_LIQUIDATION_THRESHOLD);
   });
 });

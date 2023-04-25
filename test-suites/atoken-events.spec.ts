@@ -67,6 +67,7 @@ const increaseSupplyIndex = async (
 
   const { aTokenAddress } = await pool.getReserveData(assetToIncrease);
   const availableLiquidity = await borrowingToken.balanceOf(aTokenAddress);
+  // empty price update data
   await pool
     .connect(borrower.signer)
     .borrow(
@@ -74,7 +75,8 @@ const increaseSupplyIndex = async (
       availableLiquidity.percentMul('20'),
       RateMode.Variable,
       0,
-      borrower.address
+      borrower.address,
+      []
     );
 
   await advanceTimeAndBlock(10000000000);

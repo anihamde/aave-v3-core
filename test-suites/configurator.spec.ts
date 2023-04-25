@@ -949,7 +949,8 @@ makeSuite('PoolConfigurator', (testEnv: TestEnv) => {
 
     await pool.connect(user2.signer).supply(dai.address, daiAmount, user2.address, '0');
 
-    await pool.connect(user2.signer).borrow(weth.address, '100', 2, '0', user2.address);
+    // empty price update data
+    await pool.connect(user2.signer).borrow(weth.address, '100', 2, '0', user2.address, []);
 
     await expect(configurator.setSiloedBorrowing(weth.address, true)).to.be.revertedWith(
       RESERVE_DEBT_NOT_ZERO
@@ -1041,7 +1042,8 @@ makeSuite('PoolConfigurator', (testEnv: TestEnv) => {
       users: [user1],
     } = testEnv;
 
-    await pool.connect(user1.signer).withdraw(weth.address, MAX_UINT_AMOUNT, user1.address);
+    // empty price update data
+    await pool.connect(user1.signer).withdraw(weth.address, MAX_UINT_AMOUNT, user1.address, []);
 
     await configurator.connect(riskAdmin.signer).setDebtCeiling(weth.address, '100');
 

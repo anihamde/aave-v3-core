@@ -79,7 +79,6 @@ const setupPositions = async (testEnv: TestEnv, borrowingMode: RateMode) => {
     .deposit(weth.address, amountETHtoDeposit, borrower.address, '0');
 
   //user 2 borrows
-
   const userGlobalData = await pool.getUserAccountData(borrower.address);
   const daiPrice = await oracle.getAssetPrice(dai.address);
 
@@ -87,9 +86,10 @@ const setupPositions = async (testEnv: TestEnv, borrowingMode: RateMode) => {
     dai.address,
     userGlobalData.availableBorrowsBase.div(daiPrice).mul(5000).div(10000).toString()
   );
+  // empty price update data
   await pool
     .connect(borrower.signer)
-    .borrow(dai.address, amountDAIToBorrow, borrowingMode, '0', borrower.address);
+    .borrow(dai.address, amountDAIToBorrow, borrowingMode, '0', borrower.address, []);
 };
 
 makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
@@ -278,7 +278,8 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
     expect(userReserveDataBefore.usageAsCollateralEnabled).to.be.true;
 
     expect(
-      await pool.connect(user0.signer).setUserUseReserveAsCollateral(dai.address, true)
+      // empty price update data
+      await pool.connect(user0.signer).setUserUseReserveAsCollateral(dai.address, true, [])
     ).to.not.emit(pool, 'ReserveUsedAsCollateralEnabled');
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
@@ -303,7 +304,8 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
     expect(await pool.connect(user0.signer).supply(dai.address, amount, user0.address, 0));
 
     // Disable asset as collateral
-    await expect(pool.connect(user0.signer).setUserUseReserveAsCollateral(dai.address, false))
+    // empty price update data
+    await expect(pool.connect(user0.signer).setUserUseReserveAsCollateral(dai.address, false, []))
       .to.emit(pool, 'ReserveUsedAsCollateralDisabled')
       .withArgs(dai.address, user0.address);
 
@@ -314,7 +316,8 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
     expect(userReserveDataBefore.usageAsCollateralEnabled).to.be.false;
 
     expect(
-      await pool.connect(user0.signer).setUserUseReserveAsCollateral(dai.address, false)
+      // empty price update data
+      await pool.connect(user0.signer).setUserUseReserveAsCollateral(dai.address, false, [])
     ).to.not.emit(pool, 'ReserveUsedAsCollateralDisabled');
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
@@ -337,10 +340,11 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
   it('Tries to call `finalizeTransfer()` by a non-aToken address (revert expected)', async () => {
     const { pool, dai, users } = testEnv;
 
+    // empty price update data
     await expect(
       pool
         .connect(users[0].signer)
-        .finalizeTransfer(dai.address, users[0].address, users[1].address, 0, 0, 0)
+        .finalizeTransfer(dai.address, users[0].address, users[1].address, 0, 0, 0, [])
     ).to.be.revertedWith(CALLER_NOT_ATOKEN);
   });
 
@@ -896,6 +900,7 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
 
     const wethFlashBorrowedAmount = ethers.utils.parseEther('0.8');
 
+    // empty price update data
     await pool.flashLoan(
       _mockFlashLoanReceiver.address,
       [weth.address],
@@ -903,10 +908,12 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
       [0],
       _mockFlashLoanReceiver.address,
       '0x10',
-      '0'
+      '0',
+      []
     );
 
-    await pool.connect(user0.signer).withdraw(weth.address, MAX_UINT_AMOUNT, userAddress);
+    // empty price update data
+    await pool.connect(user0.signer).withdraw(weth.address, MAX_UINT_AMOUNT, userAddress, []);
 
     await expect(
       configurator.dropReserve(weth.address),
@@ -920,7 +927,10 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
     await topUpNonPayableWithEther(user0.signer, [collectorAddress], utils.parseEther('1'));
     await impersonateAccountsHardhat([collectorAddress]);
     const collectorSigner = await hre.ethers.getSigner(collectorAddress);
-    await pool.connect(collectorSigner).withdraw(weth.address, MAX_UINT_AMOUNT, collectorAddress);
+    // empty price update data
+    await pool
+      .connect(collectorSigner)
+      .withdraw(weth.address, MAX_UINT_AMOUNT, collectorAddress, []);
 
     await configurator.dropReserve(weth.address);
   });
@@ -950,6 +960,7 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
 
     const wethFlashBorrowedAmount = ethers.utils.parseEther('100000');
 
+    // empty price update data
     await pool.flashLoan(
       _mockFlashLoanReceiver.address,
       [weth.address],
@@ -957,7 +968,8 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
       [0],
       _mockFlashLoanReceiver.address,
       '0x10',
-      '0'
+      '0',
+      []
     );
 
     // At this point the totalSupply + accruedToTreasury is ~100090 WETH, with 100063 from supply and ~27 from accruedToTreasury
@@ -1000,6 +1012,7 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
 
     const wethFlashBorrowedAmount = ethers.utils.parseEther('100000');
 
+    // empty price update data
     await pool.flashLoan(
       _mockFlashLoanReceiver.address,
       [weth.address],
@@ -1007,10 +1020,12 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
       [0],
       _mockFlashLoanReceiver.address,
       '0x10',
-      '0'
+      '0',
+      []
     );
 
-    await pool.connect(user0.signer).withdraw(weth.address, MAX_UINT_AMOUNT, userAddress);
+    // empty price update data
+    await pool.connect(user0.signer).withdraw(weth.address, MAX_UINT_AMOUNT, userAddress, []);
 
     await expect(configurator.setReserveActive(weth.address, false)).to.be.revertedWith(
       RESERVE_LIQUIDITY_NOT_ZERO
@@ -1023,7 +1038,10 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
     await topUpNonPayableWithEther(user0.signer, [collectorAddress], utils.parseEther('1'));
     await impersonateAccountsHardhat([collectorAddress]);
     const collectorSigner = await hre.ethers.getSigner(collectorAddress);
-    await pool.connect(collectorSigner).withdraw(weth.address, MAX_UINT_AMOUNT, collectorAddress);
+    // empty price update data
+    await pool
+      .connect(collectorSigner)
+      .withdraw(weth.address, MAX_UINT_AMOUNT, collectorAddress, []);
 
     await configurator.setReserveActive(weth.address, false);
   });
@@ -1152,9 +1170,10 @@ makeSuite('Pool: Edge cases', (testEnv: TestEnv) => {
     expect(await dai.connect(user3.signer).approve(pool.address, MAX_UINT_AMOUNT));
     expect(await pool.connect(user3.signer).deposit(dai.address, daiAmount, user3.address, '0'));
     expect(
+      // empty price update data
       await pool
         .connect(user3.signer)
-        .borrow(dai.address, daiAmount.div(4), RateMode.Variable, '0', user3.address)
+        .borrow(dai.address, daiAmount.div(4), RateMode.Variable, '0', user3.address, [])
     );
 
     // Time flies, indexes grow

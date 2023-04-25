@@ -315,8 +315,9 @@ makeSuite('PoolConfigurator: Edge cases', (testEnv: TestEnv) => {
     const updatedConfiguration = await helpersContract.getReserveConfigurationData(dai.address);
     expect(updatedConfiguration.isActive).to.false;
 
-    await expect(pool.withdraw(dai.address, amountDAItoDeposit, userAddress)).to.be.revertedWith(
-      ProtocolErrors.RESERVE_INACTIVE
-    );
+    // empty price update data
+    await expect(
+      pool.withdraw(dai.address, amountDAItoDeposit, userAddress, [])
+    ).to.be.revertedWith(ProtocolErrors.RESERVE_INACTIVE);
   });
 });

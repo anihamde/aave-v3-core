@@ -69,7 +69,10 @@ makeSuite('AToken: Transfer', (testEnv: TestEnv) => {
         .deposit(dai.address, amountDAItoDeposit, users[0].address, '0')
     );
 
-    expect(await pool.connect(users[0].signer).setUserUseReserveAsCollateral(dai.address, false));
+    // empty price update data
+    expect(
+      await pool.connect(users[0].signer).setUserUseReserveAsCollateral(dai.address, false, [])
+    );
 
     await expect(aDai.connect(users[0].signer).transfer(users[1].address, amountDAItoDeposit))
       .to.emit(aDai, 'Transfer')
@@ -203,9 +206,10 @@ makeSuite('AToken: Transfer', (testEnv: TestEnv) => {
         .deposit(weth.address, amountWETHtoDeposit, userAddress, '0')
     );
     expect(
+      // empty price update data
       await pool
         .connect(users[1].signer)
-        .borrow(weth.address, amountWETHtoBorrow, RateMode.Stable, '0', users[1].address)
+        .borrow(weth.address, amountWETHtoBorrow, RateMode.Stable, '0', users[1].address, [])
     );
 
     const userReserveData = await helpersContract.getUserReserveData(

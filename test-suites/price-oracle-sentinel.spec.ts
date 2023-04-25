@@ -191,9 +191,10 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
         userGlobalData.availableBorrowsBase.div(daiPrice.toString()).percentMul(9500).toString()
       );
 
+      // empty price update data
       await pool
         .connect(currBorrower.signer)
-        .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, '0', currBorrower.address);
+        .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, '0', currBorrower.address, []);
     }
   });
 
@@ -235,7 +236,8 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
 
     const amountToLiquidate = userReserveDataBefore.currentVariableDebt.div(2);
     await expect(
-      pool.liquidationCall(weth.address, dai.address, borrower.address, amountToLiquidate, true)
+      // empty price update data
+      pool.liquidationCall(weth.address, dai.address, borrower.address, amountToLiquidate, true, [])
     ).to.be.revertedWith(PRICE_ORACLE_SENTINEL_CHECK_FAILED);
   });
 
@@ -287,12 +289,14 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
 
     const amountToLiquidate = userReserveDataBefore.currentVariableDebt.div(2);
 
+    // empty price update data
     const tx = await pool.liquidationCall(
       weth.address,
       dai.address,
       borrower.address,
       amountToLiquidate,
-      true
+      true,
+      []
     );
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
@@ -397,9 +401,10 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       .supply(weth.address, utils.parseUnits('0.06775', 18), user.address, 0);
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
-        .borrow(dai.address, utils.parseUnits('100', 18), RateMode.Variable, 0, user.address)
+        .borrow(dai.address, utils.parseUnits('100', 18), RateMode.Variable, 0, user.address, [])
     ).to.be.revertedWith(PRICE_ORACLE_SENTINEL_CHECK_FAILED);
   });
 
@@ -422,9 +427,10 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       .supply(weth.address, utils.parseUnits('0.06775', 18), user.address, 0);
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
-        .borrow(dai.address, utils.parseUnits('100', 18), RateMode.Variable, 0, user.address)
+        .borrow(dai.address, utils.parseUnits('100', 18), RateMode.Variable, 0, user.address, [])
     ).to.be.revertedWith(PRICE_ORACLE_SENTINEL_CHECK_FAILED);
   });
 
@@ -449,9 +455,10 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       .supply(weth.address, utils.parseUnits('0.06775', 18), user.address, 0);
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
-        .borrow(dai.address, utils.parseUnits('100', 18), RateMode.Variable, 0, user.address)
+        .borrow(dai.address, utils.parseUnits('100', 18), RateMode.Variable, 0, user.address, [])
     ).to.be.revertedWith(PRICE_ORACLE_SENTINEL_CHECK_FAILED);
   });
 
@@ -475,9 +482,10 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       .supply(weth.address, utils.parseUnits('0.06775', 18), user.address, 0);
 
     await waitForTx(
+      // empty price update data
       await pool
         .connect(user.signer)
-        .borrow(dai.address, utils.parseUnits('100', 18), RateMode.Variable, 0, user.address)
+        .borrow(dai.address, utils.parseUnits('100', 18), RateMode.Variable, 0, user.address, [])
     );
   });
 
@@ -530,12 +538,14 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
     const amountToLiquidate = userReserveDataBefore.currentVariableDebt.div(2);
 
     // The supply is the same, but there should be a change in who has what. The liquidator should have received what the borrower lost.
+    // empty price update data
     const tx = await pool.liquidationCall(
       weth.address,
       dai.address,
       borrower.address,
       amountToLiquidate,
-      true
+      true,
+      []
     );
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(

@@ -68,6 +68,7 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
     await oracle.setAssetPrice(dai.address, daiPrice.percentDiv('2700'));
 
     // Borrow
+    // empty price update data
     await pool
       .connect(borrower.signer)
       .borrow(
@@ -75,10 +76,12 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(dai.address, '500'),
         RateMode.Stable,
         0,
-        borrower.address
+        borrower.address,
+        []
       );
 
     // Borrow
+    // empty price update data
     await pool
       .connect(borrower.signer)
       .borrow(
@@ -86,15 +89,17 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(dai.address, '220'),
         RateMode.Variable,
         0,
-        borrower.address
+        borrower.address,
+        []
       );
 
     await oracle.setAssetPrice(dai.address, daiPrice.percentMul(600_00));
 
     expect(
+      // empty price update data
       await pool
         .connect(depositor.signer)
-        .liquidationCall(weth.address, dai.address, borrower.address, MAX_UINT_AMOUNT, false)
+        .liquidationCall(weth.address, dai.address, borrower.address, MAX_UINT_AMOUNT, false, [])
     );
   });
 
@@ -140,6 +145,7 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
       .deposit(weth.address, utils.parseEther('0.9'), borrower.address, 0);
 
     // Borrow usdc
+    // empty price update data
     await pool
       .connect(borrower.signer)
       .borrow(
@@ -147,10 +153,12 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(usdc.address, '1000'),
         RateMode.Variable,
         0,
-        borrower.address
+        borrower.address,
+        []
       );
 
     // Borrow dai stable
+    // empty price update data
     await pool
       .connect(borrower.signer)
       .borrow(
@@ -158,10 +166,12 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(dai.address, '100'),
         RateMode.Stable,
         0,
-        borrower.address
+        borrower.address,
+        []
       );
 
     // Borrow dai variable
+    // empty price update data
     await pool
       .connect(borrower.signer)
       .borrow(
@@ -169,7 +179,8 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(dai.address, '100'),
         RateMode.Variable,
         0,
-        borrower.address
+        borrower.address,
+        []
       );
 
     // Increase usdc price to allow liquidation
@@ -194,9 +205,10 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
     );
 
     expect(
+      // empty price update data
       await pool
         .connect(depositor.signer)
-        .liquidationCall(weth.address, dai.address, borrower.address, MAX_UINT_AMOUNT, false)
+        .liquidationCall(weth.address, dai.address, borrower.address, MAX_UINT_AMOUNT, false, [])
     );
 
     const userConfigAfter = BigNumber.from(
@@ -260,6 +272,7 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
       .deposit(weth.address, utils.parseEther('0.9'), borrower.address, 0);
 
     // Borrow usdc
+    // empty price update data
     await pool
       .connect(borrower.signer)
       .borrow(
@@ -267,10 +280,12 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(usdc.address, '1000'),
         RateMode.Variable,
         0,
-        borrower.address
+        borrower.address,
+        []
       );
 
     // Borrow dai stable
+    // empty price update data
     await pool
       .connect(borrower.signer)
       .borrow(
@@ -278,10 +293,12 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(dai.address, '100'),
         RateMode.Stable,
         0,
-        borrower.address
+        borrower.address,
+        []
       );
 
     // Borrow dai variable
+    // empty price update data
     await pool
       .connect(borrower.signer)
       .borrow(
@@ -289,7 +306,8 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
         await convertToCurrencyDecimals(dai.address, '100'),
         RateMode.Variable,
         0,
-        borrower.address
+        borrower.address,
+        []
       );
 
     // HF = (0.9 * 0.85) / (1000 * 0.0005 + 100 * 0.0005 + 100 * 0.0005) = 1.275
@@ -315,9 +333,10 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
 
     expect(await usdc.connect(depositor.signer).approve(pool.address, MAX_UINT_AMOUNT));
     expect(
+      // empty price update data
       await pool
         .connect(depositor.signer)
-        .liquidationCall(weth.address, usdc.address, borrower.address, MAX_UINT_AMOUNT, false)
+        .liquidationCall(weth.address, usdc.address, borrower.address, MAX_UINT_AMOUNT, false, [])
     );
 
     const userConfigAfter = BigNumber.from(

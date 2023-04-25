@@ -124,7 +124,8 @@ makeSuite('DebtToken: Permit Delegation', (testEnv: TestEnv) => {
       (await variableDebtDai.borrowAllowance(user2.address, user3.address)).toString()
     ).to.be.equal(permitAmount);
 
-    await pool.connect(user3.signer).borrow(dai.address, permitAmount, 2, 0, user2.address);
+    // empty price update data
+    await pool.connect(user3.signer).borrow(dai.address, permitAmount, 2, 0, user2.address, []);
     expect(
       (await variableDebtDai.borrowAllowance(user2.address, user3.address)).toString()
     ).to.be.equal('0');
@@ -171,9 +172,10 @@ makeSuite('DebtToken: Permit Delegation', (testEnv: TestEnv) => {
       (await stableDebtDai.borrowAllowance(user2.address, user3.address)).toString()
     ).to.be.equal(permitAmount);
 
+    // empty price update data
     await pool
       .connect(user3.signer)
-      .borrow(dai.address, daiMintedAmount.div(10), 1, 0, user2.address);
+      .borrow(dai.address, daiMintedAmount.div(10), 1, 0, user2.address, []);
 
     expect(
       (await stableDebtDai.borrowAllowance(user2.address, user3.address)).toString()
