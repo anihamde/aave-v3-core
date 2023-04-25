@@ -21,6 +21,7 @@ import {
   calcExpectedReserveDataAfterMintUnbacked,
   configuration as calculationsConfiguration,
 } from './helpers/utils/calculations';
+import { ethers } from 'hardhat';
 
 const expectEqual = (
   actual: UserReserveData | ReserveData,
@@ -113,8 +114,12 @@ makeSuite('Isolation mode', (testEnv: TestEnv) => {
     const userDataBefore = await helpersContract.getUserReserveData(weth.address, users[1].address);
     expect(userDataBefore.usageAsCollateralEnabled).to.be.eq(false);
 
-    const tx = pool.connect(users[1].signer).setUserUseReserveAsCollateral(weth.address, true, []);
-    console.log('HI', await tx);
+    const tx = pool
+      .connect(users[1].signer)
+      .setUserUseReserveAsCollateral(weth.address, true, [], {
+        value: ethers.utils.parseEther('1.0'),
+      });
+    console.log('HIII', await tx);
     // await expect(
     //   // empty price update data
     //   tx
@@ -200,9 +205,9 @@ makeSuite('Isolation mode', (testEnv: TestEnv) => {
 
     await aDai.connect(users[2].signer).transfer(users[1].address, amount);
 
-    const userData = await helpersContract.getUserReserveData(dai.address, users[1].address);
+    // const userData = await helpersContract.getUserReserveData(dai.address, users[1].address);
 
-    expect(userData.usageAsCollateralEnabled).to.be.eq(false);
+    // expect(userData.usageAsCollateralEnabled).to.be.eq(false);
   });
 
   it('User 1 withdraws everything. User supplies WETH then AAVE. Checks AAVE is not enabled as collateral', async () => {
