@@ -780,6 +780,4 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
       })
     );
   }
-
-  receive() external payable {}
 }

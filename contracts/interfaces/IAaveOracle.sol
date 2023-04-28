@@ -76,5 +76,9 @@ interface IAaveOracle is IPriceOracleGetter {
    */
   function getFallbackOracle() external view returns (address);
 
-  receive() external payable;
+  /**
+   * @notice Updates the Pyth oracle price
+   * @param priceUpdateData The bytes array that holds the encoded price info to update with
+   */
+  function updatePythPrice(bytes[] calldata priceUpdateData) external payable;
 }

@@ -169,21 +169,21 @@ contract AaveOracle is IAaveOracle {
     uint64 emaConf,
     uint64 publishTime
   ) public payable {
-    if (_isMock) {
-      bytes memory priceFeedData = getPriceUpdateDataForOneFeed(
-        id,
-        price,
-        conf,
-        expo,
-        emaPrice,
-        emaConf,
-        publishTime
-      );
+    require(_isMock, 'Cannot update non-mock Pyth price feed with unsigned data');
 
-      bytes[] memory updateData = new bytes[](1);
-      updateData[0] = priceFeedData;
-      _mockPythOracle.updatePriceFeeds{value: msg.value}(updateData);
-    }
+    bytes memory priceFeedData = getPriceUpdateDataForOneFeed(
+      id,
+      price,
+      conf,
+      expo,
+      emaPrice,
+      emaConf,
+      publishTime
+    );
+
+    bytes[] memory updateData = new bytes[](1);
+    updateData[0] = priceFeedData;
+    _mockPythOracle.updatePriceFeeds{value: msg.value}(updateData);
   }
 
   function getLastUpdateTime(address asset) public view returns (uint) {
