@@ -14,6 +14,7 @@ import {
   StableDebtToken__factory,
   VariableDebtToken__factory,
 } from '@aave/deploy-v3';
+import { ethers } from 'hardhat';
 
 makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
   let snap: string;
@@ -28,7 +29,8 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
   before(async () => {
     const { addressesProvider, oracle } = testEnv;
 
-    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
+    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
   });
 
   after(async () => {
@@ -37,7 +39,7 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
   });
 
   it('ValidationLogic `executeLiquidationCall` where user has variable and stable debt, but variable debt is insufficient to cover the full liquidation amount', async () => {
-    const { pool, users, dai, weth, oracle } = testEnv;
+    const { pool, users, dai, weth, oracle, aaveOracle } = testEnv;
 
     const depositor = users[0];
     const borrower = users[1];
@@ -63,9 +65,21 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
       .connect(borrower.signer)
       .deposit(weth.address, utils.parseEther('0.9'), borrower.address, 0);
 
-    const daiPrice = await oracle.getAssetPrice(dai.address);
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
 
-    await oracle.setAssetPrice(dai.address, daiPrice.percentDiv('2700'));
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      daiPrice.percentDiv('2700'),
+      1,
+      0,
+      daiPrice.percentDiv('2700'),
+      1,
+      daiLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(dai.address, daiPrice.percentDiv('2700'));
 
     // Borrow
     // empty price update data
@@ -93,7 +107,18 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
         []
       );
 
-    await oracle.setAssetPrice(dai.address, daiPrice.percentMul(600_00));
+    const daiLastUpdateTime2 = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      daiPrice.percentMul(600_00),
+      1,
+      0,
+      daiPrice.percentMul(600_00),
+      1,
+      daiLastUpdateTime2.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(600_00));
 
     expect(
       // empty price update data
@@ -104,7 +129,7 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
   });
 
   it('Liquidation repay asset completely, asset should not be set as borrowed anymore', async () => {
-    const { pool, users, dai, usdc, weth, oracle } = testEnv;
+    const { pool, users, dai, usdc, weth, oracle, aaveOracle } = testEnv;
 
     const depositor = users[0];
     const borrower = users[1];
@@ -184,8 +209,20 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
       );
 
     // Increase usdc price to allow liquidation
-    const usdcPrice = await oracle.getAssetPrice(usdc.address);
-    await oracle.setAssetPrice(usdc.address, usdcPrice.mul(10));
+    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
+    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      usdcID,
+      usdcPrice.mul(10),
+      1,
+      0,
+      usdcPrice.mul(10),
+      1,
+      usdcLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(usdc.address, usdcPrice.mul(10));
 
     const daiData = await pool.getReserveData(dai.address);
     const variableDebtToken = VariableDebtToken__factory.connect(
@@ -229,7 +266,7 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
   });
 
   it('Liquidate the whole WETH collateral with 10% liquidation fee, asset should not be set as collateralized anymore', async () => {
-    const { pool, users, dai, usdc, weth, aWETH, oracle, configurator } = testEnv;
+    const { pool, users, dai, usdc, weth, aWETH, oracle, aaveOracle, configurator } = testEnv;
 
     await configurator.setLiquidationProtocolFee(weth.address, '1000'); // 10%
 
@@ -313,8 +350,20 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
     // HF = (0.9 * 0.85) / (1000 * 0.0005 + 100 * 0.0005 + 100 * 0.0005) = 1.275
 
     // Increase usdc price to allow liquidation
-    const usdcPrice = await oracle.getAssetPrice(usdc.address);
-    await oracle.setAssetPrice(usdc.address, usdcPrice.mul(10));
+    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
+    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      usdcID,
+      usdcPrice.mul(10),
+      1,
+      0,
+      usdcPrice.mul(10),
+      1,
+      usdcLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(usdc.address, usdcPrice.mul(10));
 
     // HF = (0.9 * 0.85) / (1000 * 0.005 + 100 * 0.0005 + 100 * 0.0005) = 0.15
     //

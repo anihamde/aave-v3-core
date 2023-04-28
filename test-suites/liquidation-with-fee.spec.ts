@@ -9,6 +9,7 @@ import { getReserveData, getUserData } from './helpers/utils/helpers';
 import { makeSuite } from './helpers/make-suite';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { waitForTx, increaseTime, evmSnapshot, evmRevert } from '@aave/deploy-v3';
+import { ethers } from 'hardhat';
 
 declare var hre: HardhatRuntimeEnvironment;
 
@@ -18,7 +19,8 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
   before(async () => {
     const { addressesProvider, oracle } = testEnv;
 
-    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
+    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
   });
 
   after(async () => {
@@ -33,13 +35,14 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       usdc,
       weth,
       oracle,
+      aaveOracle,
       configurator,
       helpersContract,
     } = testEnv;
 
     const snapId = await evmSnapshot();
 
-    const daiPrice = await oracle.getAssetPrice(usdc.address);
+    const daiPrice = await aaveOracle.getAssetPrice(usdc.address);
 
     //1. Depositor supplies 10000 USDC and 10 ETH
     await usdc
@@ -119,7 +122,19 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     await increaseTime(86400);
 
     //5. Decrease weth price to allow liquidation
-    await oracle.setAssetPrice(usdc.address, '8000000000000000'); //weth = 500 usdc
+    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      usdcID,
+      '8000000000000000',
+      1,
+      0,
+      '8000000000000000',
+      1,
+      usdcLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(usdc.address, '8000000000000000'); //weth = 500 usdc
 
     //7. Turn on liquidation protocol fee
     expect(await configurator.setLiquidationProtocolFee(weth.address, 500));
@@ -192,6 +207,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       users: [depositor, borrower],
       pool,
       oracle,
+      aaveOracle,
     } = testEnv;
 
     //mints DAI to depositor
@@ -226,7 +242,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     //user 2 borrows
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
-    const daiPrice = await oracle.getAssetPrice(dai.address);
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
 
     const amountDAIToBorrow = await convertToCurrencyDecimals(
       dai.address,
@@ -249,11 +265,24 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       users: [, borrower],
       pool,
       oracle,
+      aaveOracle,
     } = testEnv;
 
-    const daiPrice = await oracle.getAssetPrice(dai.address);
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
 
-    await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11800));
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      daiPrice.percentMul(11800),
+      1,
+      0,
+      daiPrice.percentMul(11800),
+      1,
+      daiLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11800));
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
@@ -268,6 +297,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       users: [, borrower, , liquidator],
       pool,
       oracle,
+      aaveOracle,
       helpersContract,
     } = testEnv;
 
@@ -329,8 +359,8 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     );
     const treasuryBalanceAfter = treasuryDataAfter.currentATokenBalance;
 
-    const collateralPrice = await oracle.getAssetPrice(weth.address);
-    const principalPrice = await oracle.getAssetPrice(dai.address);
+    const collateralPrice = await aaveOracle.getAssetPrice(weth.address);
+    const principalPrice = await aaveOracle.getAssetPrice(dai.address);
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(weth.address))
       .decimals;
@@ -425,6 +455,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       users: [, , , depositor, borrower, liquidator],
       pool,
       oracle,
+      aaveOracle,
       weth,
       aWETH,
       helpersContract,
@@ -463,7 +494,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     //borrower borrows
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
-    const usdcPrice = await oracle.getAssetPrice(usdc.address);
+    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
 
     const amountUSDCToBorrow = await convertToCurrencyDecimals(
       usdc.address,
@@ -476,7 +507,19 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address, []);
 
     //drops HF below 1
-    await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
+    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      usdcID,
+      usdcPrice.percentMul(11200),
+      1,
+      0,
+      usdcPrice.percentMul(11200),
+      1,
+      usdcLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
 
     //mints usdc to the liquidator
     await usdc
@@ -531,8 +574,8 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     );
     const treasuryBalanceAfter = treasuryDataAfter.currentATokenBalance;
 
-    const collateralPrice = await oracle.getAssetPrice(weth.address);
-    const principalPrice = await oracle.getAssetPrice(usdc.address);
+    const collateralPrice = await aaveOracle.getAssetPrice(weth.address);
+    const principalPrice = await aaveOracle.getAssetPrice(usdc.address);
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(weth.address))
       .decimals;
@@ -616,6 +659,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       users: [, , , , borrower, liquidator],
       pool,
       oracle,
+      aaveOracle,
       helpersContract,
     } = testEnv;
 
@@ -633,10 +677,22 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     await pool
       .connect(borrower.signer)
       .deposit(aave.address, amountToDeposit, borrower.address, '0');
-    const usdcPrice = await oracle.getAssetPrice(usdc.address);
+    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
 
     //drops HF below 1
-    await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11400));
+    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      usdcID,
+      usdcPrice.percentMul(11400),
+      1,
+      0,
+      usdcPrice.percentMul(11400),
+      1,
+      usdcLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11400));
 
     //mints usdc to the liquidator
     await usdc
@@ -656,8 +712,8 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
 
     const amountToLiquidate = userReserveDataBefore.currentStableDebt.div(2);
 
-    const collateralPrice = await oracle.getAssetPrice(aave.address);
-    const principalPrice = await oracle.getAssetPrice(usdc.address);
+    const collateralPrice = await aaveOracle.getAssetPrice(aave.address);
+    const principalPrice = await aaveOracle.getAssetPrice(usdc.address);
 
     const aaveTokenAddresses = await helpersContract.getReserveTokensAddresses(aave.address);
     const aAaveTokenAddress = await aaveTokenAddresses.aTokenAddress;
@@ -775,6 +831,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       users: [, , , , borrower, liquidator],
       pool,
       oracle,
+      aaveOracle,
       helpersContract,
       configurator,
     } = testEnv;
@@ -801,10 +858,22 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     await pool
       .connect(borrower.signer)
       .deposit(aave.address, amountToDeposit, borrower.address, '0');
-    const usdcPrice = await oracle.getAssetPrice(usdc.address);
+    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
 
     //drops HF below 1
-    await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11400));
+    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      usdcID,
+      usdcPrice.percentMul(11400),
+      1,
+      0,
+      usdcPrice.percentMul(11400),
+      1,
+      usdcLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11400));
 
     //mints usdc to the liquidator
     await usdc
@@ -824,8 +893,8 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
 
     const amountToLiquidate = userReserveDataBefore.currentStableDebt.div(2);
 
-    const collateralPrice = await oracle.getAssetPrice(aave.address);
-    const principalPrice = await oracle.getAssetPrice(usdc.address);
+    const collateralPrice = await aaveOracle.getAssetPrice(aave.address);
+    const principalPrice = await aaveOracle.getAssetPrice(usdc.address);
 
     const aaveTokenAddresses = await helpersContract.getReserveTokensAddresses(aave.address);
     const aAaveTokenAddress = await aaveTokenAddresses.aTokenAddress;

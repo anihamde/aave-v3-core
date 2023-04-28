@@ -7,6 +7,7 @@ import { makeSuite, TestEnv } from './helpers/make-suite';
 import { getReserveData, getUserData } from './helpers/utils/helpers';
 import './helpers/utils/wadraymath';
 import { evmRevert, evmSnapshot, waitForTx } from '@aave/deploy-v3';
+import { ethers } from 'hardhat';
 
 makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (testEnv: TestEnv) => {
   const { INVALID_HF } = ProtocolErrors;
@@ -24,7 +25,8 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
 
   before(async () => {
     const { addressesProvider, oracle } = testEnv;
-    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
+    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
     snap = await evmSnapshot();
   });
 
@@ -115,10 +117,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       users: [, depositor],
       dai,
       oracle,
+      aaveOracle,
     } = testEnv;
 
     const userGlobalData = await pool.getUserAccountData(depositor.address);
-    const daiPrice = await oracle.getAssetPrice(dai.address);
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
 
     const amountDAIToBorrow = await convertToCurrencyDecimals(
       dai.address,
@@ -137,22 +140,47 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       users: [, depositor],
       pool,
       oracle,
+      aaveOracle,
     } = testEnv;
 
-    const daiPrice = await oracle.getAssetPrice(dai.address);
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
 
     const userGlobalDataBefore = await pool.getUserAccountData(depositor.address);
     expect(userGlobalDataBefore.healthFactor).to.be.gt(utils.parseUnits('1', 18));
 
-    await oracle.setAssetPrice(
-      dai.address,
-      daiPrice.mul(userGlobalDataBefore.healthFactor).div(utils.parseUnits('1', 18))
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      daiPrice.mul(userGlobalDataBefore.healthFactor).div(utils.parseUnits('1', 18)),
+      1,
+      0,
+      daiPrice.mul(userGlobalDataBefore.healthFactor).div(utils.parseUnits('1', 18)),
+      1,
+      daiLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
     );
+    // await oracle.setAssetPrice(
+    //   dai.address,
+    //   daiPrice.mul(userGlobalDataBefore.healthFactor).div(utils.parseUnits('1', 18))
+    // );
 
     const userGlobalDataMid = await pool.getUserAccountData(depositor.address);
     expect(userGlobalDataMid.healthFactor).to.be.gt(utils.parseUnits('1', 18));
 
-    await oracle.setAssetPrice(dai.address, (await oracle.getAssetPrice(dai.address)).add(1));
+    const daiPrice2 = await aaveOracle.getAssetPrice(dai.address);
+    const daiLastUpdateTime2 = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      daiPrice2.add(1),
+      1,
+      0,
+      daiPrice2.add(1),
+      1,
+      daiLastUpdateTime2.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(dai.address, (await oracle.getAssetPrice(dai.address)).add(1));
 
     const userGlobalDataAfter = await pool.getUserAccountData(depositor.address);
     expect(userGlobalDataAfter.healthFactor).to.be.lt(utils.parseUnits('1', 18), INVALID_HF);
@@ -165,6 +193,7 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       users: [, borrower, , liquidator],
       pool,
       oracle,
+      aaveOracle,
       helpersContract,
     } = testEnv;
 
@@ -203,8 +232,8 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     );
     expect(userGlobalDataAfter.totalDebtBase).to.be.lt(userGlobalDataBefore.totalDebtBase);
 
-    const collateralPrice = await oracle.getAssetPrice(usdc.address);
-    const principalPrice = await oracle.getAssetPrice(dai.address);
+    const collateralPrice = await aaveOracle.getAssetPrice(usdc.address);
+    const principalPrice = await aaveOracle.getAssetPrice(dai.address);
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(usdc.address))
       .decimals;
     const principalDecimals = (await helpersContract.getReserveConfigurationData(dai.address))
@@ -251,6 +280,7 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     const {
       helpersContract,
       oracle,
+      aaveOracle,
       configurator,
       pool,
       poolAdmin,
@@ -334,12 +364,24 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     );
 
     // Drop weth price
-    const wethPrice = await oracle.getAssetPrice(weth.address);
+    const wethPrice = await aaveOracle.getAssetPrice(weth.address);
 
     const userGlobalDataBefore = await pool.getUserAccountData(user1.address);
     expect(userGlobalDataBefore.healthFactor).to.be.gt(utils.parseUnits('1', 18));
 
-    await oracle.setAssetPrice(weth.address, wethPrice.percentMul(9000));
+    const wethID = await aaveOracle.getSourceOfAsset(weth.address);
+    const wethLastUpdateTime = await aaveOracle.getLastUpdateTime(weth.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      wethID,
+      wethPrice.percentMul(9000),
+      1,
+      0,
+      wethPrice.percentMul(9000),
+      1,
+      wethLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(weth.address, wethPrice.percentMul(9000));
 
     const userGlobalDataAfter = await pool.getUserAccountData(user1.address);
     expect(userGlobalDataAfter.healthFactor).to.be.lt(utils.parseUnits('1', 18), INVALID_HF);
@@ -354,8 +396,8 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
 
     const balanceAfter = await aWETH.balanceOf(user1.address);
 
-    const debtPrice = await oracle.getAssetPrice(usdc.address);
-    const collateralPrice = await oracle.getAssetPrice(weth.address);
+    const debtPrice = await aaveOracle.getAssetPrice(usdc.address);
+    const collateralPrice = await aaveOracle.getAssetPrice(weth.address);
 
     const wethConfig = await helpersContract.getReserveConfigurationData(weth.address);
 
@@ -376,6 +418,7 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     const {
       helpersContract,
       oracle,
+      aaveOracle,
       configurator,
       pool,
       poolAdmin,
@@ -388,10 +431,68 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
 
     // We need an extra oracle for prices. USe user address as asset in price oracle
     const EMODE_ORACLE_ADDRESS = user1.address;
-    await oracle.setAssetPrice(EMODE_ORACLE_ADDRESS, utils.parseUnits('1', 8));
-    await oracle.setAssetPrice(dai.address, utils.parseUnits('0.99', 8));
-    await oracle.setAssetPrice(usdc.address, utils.parseUnits('1.01', 8));
-    await oracle.setAssetPrice(weth.address, utils.parseUnits('4000', 8));
+    // set source of emode asset
+    const emodeIDSet = EMODE_ORACLE_ADDRESS;
+    await expect(
+      aaveOracle.connect(poolAdmin.signer).setAssetSources([EMODE_ORACLE_ADDRESS], [emodeIDSet])
+    )
+      .to.emit(aaveOracle, 'AssetSourceUpdated')
+      .withArgs(EMODE_ORACLE_ADDRESS, emodeIDSet);
+    const emodeID = await aaveOracle.getSourceOfAsset(EMODE_ORACLE_ADDRESS);
+    const emodeLastUpdateTime = 1_600_000_000_000;
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      emodeID,
+      utils.parseUnits('1', 8),
+      1,
+      0,
+      utils.parseUnits('1', 8),
+      1,
+      emodeLastUpdateTime + 1,
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(EMODE_ORACLE_ADDRESS, utils.parseUnits('1', 8));
+
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      utils.parseUnits('0.99', 8),
+      1,
+      0,
+      utils.parseUnits('0.99', 8),
+      1,
+      daiLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(dai.address, utils.parseUnits('0.99', 8));
+
+    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      usdcID,
+      utils.parseUnits('1.01', 8),
+      1,
+      0,
+      utils.parseUnits('1.01', 8),
+      1,
+      usdcLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(usdc.address, utils.parseUnits('1.01', 8));
+
+    const wethID = await aaveOracle.getSourceOfAsset(weth.address);
+    const wethLastUpdateTime = await aaveOracle.getLastUpdateTime(weth.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      wethID,
+      utils.parseUnits('4000', 8),
+      1,
+      0,
+      utils.parseUnits('4000', 8),
+      1,
+      wethLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(weth.address, utils.parseUnits('4000', 8));
 
     expect(
       await configurator
@@ -465,12 +566,23 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     );
 
     // Increase EMODE oracle price
-    const oraclePrice = await oracle.getAssetPrice(EMODE_ORACLE_ADDRESS);
+    const oraclePrice = await aaveOracle.getAssetPrice(EMODE_ORACLE_ADDRESS);
 
     const userGlobalDataBefore = await pool.getUserAccountData(user1.address);
     expect(userGlobalDataBefore.healthFactor).to.be.gt(utils.parseUnits('1', 18));
 
-    await oracle.setAssetPrice(EMODE_ORACLE_ADDRESS, oraclePrice.mul(2));
+    const emodeLastUpdateTime2 = await aaveOracle.getLastUpdateTime(EMODE_ORACLE_ADDRESS);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      emodeID,
+      oraclePrice.mul(2),
+      1,
+      0,
+      oraclePrice.mul(2),
+      1,
+      emodeLastUpdateTime2.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(EMODE_ORACLE_ADDRESS, oraclePrice.mul(2));
 
     const userGlobalDataAfter = await pool.getUserAccountData(user1.address);
     expect(userGlobalDataAfter.healthFactor).to.be.lt(utils.parseUnits('1', 18), INVALID_HF);
@@ -485,8 +597,8 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
 
     const balanceAfter = await aDai.balanceOf(user1.address);
 
-    const debtPrice = await oracle.getAssetPrice(EMODE_ORACLE_ADDRESS);
-    const collateralPrice = await oracle.getAssetPrice(EMODE_ORACLE_ADDRESS);
+    const debtPrice = await aaveOracle.getAssetPrice(EMODE_ORACLE_ADDRESS);
+    const collateralPrice = await aaveOracle.getAssetPrice(EMODE_ORACLE_ADDRESS);
 
     const expectedCollateralLiquidated = debtPrice
       .mul(toBorrow.div(2))
@@ -506,6 +618,7 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     const {
       helpersContract,
       oracle,
+      aaveOracle,
       configurator,
       pool,
       poolAdmin,
@@ -518,10 +631,68 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
 
     // We need an extra oracle for prices. USe user address as asset in price oracle
     const EMODE_ORACLE_ADDRESS = user1.address;
-    await oracle.setAssetPrice(EMODE_ORACLE_ADDRESS, utils.parseUnits('1', 8));
-    await oracle.setAssetPrice(dai.address, utils.parseUnits('0.99', 8));
-    await oracle.setAssetPrice(usdc.address, utils.parseUnits('1.01', 8));
-    await oracle.setAssetPrice(weth.address, utils.parseUnits('4000', 8));
+    // set source of emode asset
+    const emodeIDSet = EMODE_ORACLE_ADDRESS;
+    await expect(
+      aaveOracle.connect(poolAdmin.signer).setAssetSources([EMODE_ORACLE_ADDRESS], [emodeIDSet])
+    )
+      .to.emit(aaveOracle, 'AssetSourceUpdated')
+      .withArgs(EMODE_ORACLE_ADDRESS, emodeIDSet);
+    const emodeID = await aaveOracle.getSourceOfAsset(EMODE_ORACLE_ADDRESS);
+    const emodeLastUpdateTime = 1_600_000_000_000;
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      emodeID,
+      utils.parseUnits('1', 8),
+      1,
+      0,
+      utils.parseUnits('1', 8),
+      1,
+      emodeLastUpdateTime + 1,
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(EMODE_ORACLE_ADDRESS, utils.parseUnits('1', 8));
+
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      utils.parseUnits('0.99', 8),
+      1,
+      0,
+      utils.parseUnits('0.99', 8),
+      1,
+      daiLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(dai.address, utils.parseUnits('0.99', 8));
+
+    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      usdcID,
+      utils.parseUnits('1.01', 8),
+      1,
+      0,
+      utils.parseUnits('1.01', 8),
+      1,
+      usdcLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(usdc.address, utils.parseUnits('1.01', 8));
+
+    const wethID = await aaveOracle.getSourceOfAsset(weth.address);
+    const wethLastUpdateTime = await aaveOracle.getLastUpdateTime(weth.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      wethID,
+      utils.parseUnits('4000', 8),
+      1,
+      0,
+      utils.parseUnits('4000', 8),
+      1,
+      wethLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(weth.address, utils.parseUnits('4000', 8));
 
     // Create category
     expect(
@@ -596,12 +767,23 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     );
 
     // Drop weth price
-    const oraclePrice = await oracle.getAssetPrice(EMODE_ORACLE_ADDRESS);
+    const oraclePrice = await aaveOracle.getAssetPrice(EMODE_ORACLE_ADDRESS);
 
     const userGlobalDataBefore = await pool.getUserAccountData(user1.address);
     expect(userGlobalDataBefore.healthFactor).to.be.gt(utils.parseUnits('1', 18));
 
-    await oracle.setAssetPrice(EMODE_ORACLE_ADDRESS, oraclePrice.mul(2));
+    const emodeLastUpdateTime2 = await aaveOracle.getLastUpdateTime(EMODE_ORACLE_ADDRESS);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      emodeID,
+      oraclePrice.mul(2),
+      1,
+      0,
+      oraclePrice.mul(2),
+      1,
+      emodeLastUpdateTime2.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(EMODE_ORACLE_ADDRESS, oraclePrice.mul(2));
 
     const userGlobalDataAfter = await pool.getUserAccountData(user1.address);
     expect(userGlobalDataAfter.healthFactor).to.be.lt(utils.parseUnits('1', 18), INVALID_HF);
@@ -616,8 +798,8 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
 
     const balanceAfter = await aWETH.balanceOf(user1.address);
 
-    const debtPrice = await oracle.getAssetPrice(EMODE_ORACLE_ADDRESS);
-    const collateralPrice = await oracle.getAssetPrice(weth.address);
+    const debtPrice = await aaveOracle.getAssetPrice(EMODE_ORACLE_ADDRESS);
+    const collateralPrice = await aaveOracle.getAssetPrice(weth.address);
 
     const wethConfig = await helpersContract.getReserveConfigurationData(weth.address);
 

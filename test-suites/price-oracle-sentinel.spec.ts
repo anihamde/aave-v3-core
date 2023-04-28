@@ -17,6 +17,7 @@ import { getReserveData, getUserData } from './helpers/utils/helpers';
 import './helpers/utils/wadraymath';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { waitForTx, increaseTime } from '@aave/deploy-v3';
+import { ethers } from 'hardhat';
 
 declare var hre: HardhatRuntimeEnvironment;
 
@@ -49,7 +50,8 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       )
     ).deployed();
 
-    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
+    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
   });
 
   after(async () => {
@@ -150,6 +152,7 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       users: [depositor, borrower, borrower2],
       pool,
       oracle,
+      aaveOracle,
     } = testEnv;
 
     //mints DAI to depositor
@@ -184,7 +187,7 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
 
       //user 2 borrows
       const userGlobalData = await pool.getUserAccountData(currBorrower.address);
-      const daiPrice = await oracle.getAssetPrice(dai.address);
+      const daiPrice = await aaveOracle.getAssetPrice(dai.address);
 
       const amountDAIToBorrow = await convertToCurrencyDecimals(
         dai.address,
@@ -204,10 +207,23 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       users: [, borrower],
       pool,
       oracle,
+      aaveOracle,
     } = testEnv;
 
-    const daiPrice = await oracle.getAssetPrice(dai.address);
-    await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11000));
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      daiPrice.percentMul(11000),
+      1,
+      0,
+      daiPrice.percentMul(11000),
+      1,
+      daiLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11000));
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
     expect(userGlobalData.healthFactor).to.be.lt(utils.parseUnits('1', 18), INVALID_HF);
@@ -247,10 +263,23 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       users: [, borrower],
       pool,
       oracle,
+      aaveOracle,
     } = testEnv;
 
-    const daiPrice = await oracle.getAssetPrice(dai.address);
-    await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11000));
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      daiPrice.percentMul(11000),
+      1,
+      0,
+      daiPrice.percentMul(11000),
+      1,
+      daiLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11000));
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
     expect(userGlobalData.healthFactor).to.be.lt(utils.parseUnits('1', 18), INVALID_HF);
@@ -263,6 +292,7 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       weth,
       users: [, borrower],
       oracle,
+      aaveOracle,
       helpersContract,
       deployer,
     } = testEnv;
@@ -312,8 +342,8 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
     const daiReserveDataAfter = await getReserveData(helpersContract, dai.address);
     const ethReserveDataAfter = await getReserveData(helpersContract, weth.address);
 
-    const collateralPrice = await oracle.getAssetPrice(weth.address);
-    const principalPrice = await oracle.getAssetPrice(dai.address);
+    const collateralPrice = await aaveOracle.getAssetPrice(weth.address);
+    const principalPrice = await aaveOracle.getAssetPrice(dai.address);
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(weth.address))
       .decimals;
@@ -392,6 +422,7 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       users: [, , , user],
       pool,
       oracle,
+      aaveOracle,
     } = testEnv;
 
     await weth.connect(user.signer)['mint(uint256)'](utils.parseUnits('0.06775', 18));
@@ -495,9 +526,22 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       users: [, borrower],
       pool,
       oracle,
+      aaveOracle,
     } = testEnv;
-    const daiPrice = await oracle.getAssetPrice(dai.address);
-    await oracle.setAssetPrice(dai.address, daiPrice.percentMul(9500));
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      daiPrice.percentMul(9500),
+      1,
+      0,
+      daiPrice.percentMul(9500),
+      1,
+      daiLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(9500));
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
     expect(userGlobalData.healthFactor).to.be.lt(utils.parseUnits('1', 18), INVALID_HF);
@@ -511,6 +555,7 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       weth,
       users: [, , borrower],
       oracle,
+      aaveOracle,
       helpersContract,
       deployer,
     } = testEnv;
@@ -563,8 +608,8 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
     const daiReserveDataAfter = await getReserveData(helpersContract, dai.address);
     const ethReserveDataAfter = await getReserveData(helpersContract, weth.address);
 
-    const collateralPrice = await oracle.getAssetPrice(weth.address);
-    const principalPrice = await oracle.getAssetPrice(dai.address);
+    const collateralPrice = await aaveOracle.getAssetPrice(weth.address);
+    const principalPrice = await aaveOracle.getAssetPrice(dai.address);
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(weth.address))
       .decimals;

@@ -27,7 +27,8 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
   before(async () => {
     const { addressesProvider, oracle } = testEnv;
 
-    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
+    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
   });
 
   after(async () => {
@@ -117,10 +118,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
       users: [, borrower],
       dai,
       oracle,
+      aaveOracle,
     } = testEnv;
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
-    const daiPrice = await oracle.getAssetPrice(dai.address);
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
 
     const amountDAIToBorrow = await convertToCurrencyDecimals(
       dai.address,
@@ -154,6 +156,7 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
       users: [, borrower, liquidator],
       pool,
       oracle,
+      aaveOracle,
       helpersContract,
     } = testEnv;
 
@@ -192,8 +195,8 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
     );
     expect(userGlobalDataAfter.totalDebtBase).to.be.lt(userGlobalDataBefore.totalDebtBase);
 
-    const collateralPrice = await oracle.getAssetPrice(usdc.address);
-    const principalPrice = await oracle.getAssetPrice(dai.address);
+    const collateralPrice = await aaveOracle.getAssetPrice(usdc.address);
+    const principalPrice = await aaveOracle.getAssetPrice(dai.address);
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(usdc.address))
       .decimals;
     const principalDecimals = (await helpersContract.getReserveConfigurationData(dai.address))

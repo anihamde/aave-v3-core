@@ -9,6 +9,7 @@ import { makeSuite, TestEnv } from './helpers/make-suite';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { waitForTx, evmSnapshot, evmRevert } from '@aave/deploy-v3';
 import { topUpNonPayableWithEther } from './helpers/utils/funds';
+import { ethers } from 'hardhat';
 
 declare var hre: HardhatRuntimeEnvironment;
 
@@ -36,7 +37,8 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
   before(async () => {
     const { addressesProvider, oracle } = testEnv;
 
-    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
+    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
   });
 
   after(async () => {
@@ -231,7 +233,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
   });
 
   it('validateBorrow() borrowing when user has already a HF < threshold', async () => {
-    const { pool, users, dai, usdc, oracle } = testEnv;
+    const { pool, users, dai, usdc, oracle, aaveOracle } = testEnv;
     const user = users[0];
     const depositor = users[1];
 
@@ -273,9 +275,21 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
         []
       );
 
-    const daiPrice = await oracle.getAssetPrice(dai.address);
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
 
-    await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      daiPrice.mul(2),
+      1,
+      0,
+      daiPrice.mul(2),
+      1,
+      daiLastUpdateTime.add(1),
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
 
     await expect(
       // empty price update data
@@ -849,6 +863,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
       dai,
       pool,
       oracle,
+      aaveOracle,
       users: [user, usdcProvider],
     } = testEnv;
 
@@ -863,7 +878,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     await pool.connect(user.signer).supply(dai.address, parseUnits('1000', 18), user.address, 0);
 
     const userGlobalData = await pool.getUserAccountData(user.address);
-    const usdcPrice = await oracle.getAssetPrice(usdc.address);
+    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
 
     const amountUSDCToBorrow = await convertToCurrencyDecimals(
       usdc.address,
@@ -887,6 +902,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
       dai,
       pool,
       oracle,
+      aaveOracle,
       poolAdmin,
       configurator,
       helpersContract,

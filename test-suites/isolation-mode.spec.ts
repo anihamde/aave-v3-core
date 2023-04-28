@@ -67,10 +67,15 @@ makeSuite('Isolation mode', (testEnv: TestEnv) => {
       await configurator.connect(poolAdmin.signer).updateBridgeProtocolFee(bridgeProtocolFeeBps)
     );
 
+    // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
     // configure oracle
-    const { aaveOracle, addressesProvider, oracle } = testEnv;
-    oracleBaseDecimals = (await aaveOracle.BASE_CURRENCY_UNIT()).toString().length - 1;
-    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    // const { aaveOracle, addressesProvider, oracle } = testEnv;
+    // const oracleAddressrn = await addressesProvider.getPriceOracle();
+    // console.log("oracle address before", oracleAddressrn);
+    // console.log("aave oracle", aaveOracle.address);
+    // console.log("oracle", oracle.address);
+    // oracleBaseDecimals = (await aaveOracle.BASE_CURRENCY_UNIT()).toString().length - 1;
+    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
 
     snapshot = await evmSnapshot();
   });
@@ -114,19 +119,17 @@ makeSuite('Isolation mode', (testEnv: TestEnv) => {
     const userDataBefore = await helpersContract.getUserReserveData(weth.address, users[1].address);
     expect(userDataBefore.usageAsCollateralEnabled).to.be.eq(false);
 
-    const tx = pool
-      .connect(users[1].signer)
-      .setUserUseReserveAsCollateral(weth.address, true, [], {
-        value: ethers.utils.parseEther('1.0'),
-      });
-    console.log('HIII', await tx);
-    // await expect(
-    //   // empty price update data
-    //   tx
-    // ).to.be.revertedWith(USER_IN_ISOLATION_MODE);
+    await expect(
+      // empty price update data
+      pool
+        .connect(users[1].signer)
+        .setUserUseReserveAsCollateral(weth.address, true, [], {
+          value: ethers.utils.parseEther('1.0'),
+        })
+    ).to.be.revertedWith(USER_IN_ISOLATION_MODE);
 
-    // const userDataAfter = await helpersContract.getUserReserveData(weth.address, users[1].address);
-    // expect(userDataAfter.usageAsCollateralEnabled).to.be.eq(false);
+    const userDataAfter = await helpersContract.getUserReserveData(weth.address, users[1].address);
+    expect(userDataAfter.usageAsCollateralEnabled).to.be.eq(false);
   });
 
   it('User 2 deposit dai and aave, then tries to use aave as collateral (revert expected)', async () => {
@@ -386,6 +389,7 @@ makeSuite('Isolation mode', (testEnv: TestEnv) => {
     const {
       dai,
       aave,
+      aaveOracle,
       oracle,
       addressesProvider,
       helpersContract,
@@ -418,8 +422,21 @@ makeSuite('Isolation mode', (testEnv: TestEnv) => {
       .connect(borrower.signer)
       .borrow(dai.address, borrowAmount, RateMode.Variable, '0', borrower.address, []);
 
-    const daiPrice = await oracle.getAssetPrice(dai.address);
-    await oracle.setAssetPrice(dai.address, daiPrice.mul(10));
+    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    await aaveOracle.updateWithPriceFeedUpdateData(
+      daiID,
+      daiPrice.mul(10),
+      1,
+      0,
+      daiPrice.mul(10),
+      1,
+      1_600_000_001_000,
+      { value: ethers.utils.parseEther('1.0') }
+    );
+    // TODO: why use fallback oracle here?
+    // const daiPrice2 = await oracle.getAssetPrice(dai.address);
+    // await oracle.setAssetPrice(dai.address, daiPrice2.mul(10));
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
