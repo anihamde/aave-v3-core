@@ -34,8 +34,9 @@ interface IAaveOracle is IPriceOracleGetter {
    * @dev Emitted after the address of Pyth oracle is updated
    * @param pythOracle The address of the Pyth oracle
    * @param isMock True for mock, False for real
+   * @param oracleMinFreshness The minimum freshness of Pyth price to be able to use that in the protocol
    */
-  event PythOracleUpdated(address indexed pythOracle, bool isMock);
+  event PythOracleUpdated(address indexed pythOracle, bool isMock, uint oracleMinFreshness);
 
   /**
    * @notice Returns the PoolAddressesProvider

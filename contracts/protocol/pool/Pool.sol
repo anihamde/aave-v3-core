@@ -360,7 +360,7 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
   ) public payable virtual override {
     // first update price
     address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
-    // TODO: why does the line below break?
+    uint256 test = IPriceOracleGetter(priceOracle).getAssetPrice(asset);
     IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
 
     SupplyLogic.executeUseReserveAsCollateral(

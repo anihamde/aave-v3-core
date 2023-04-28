@@ -14,8 +14,8 @@ import {IAaveOracle} from '../interfaces/IAaveOracle.sol';
  * @title AaveOracle
  * @author Aave
  * @notice Contract to get asset prices, manage price sources and update the fallback oracle
- * - Use of Chainlink Aggregators as first source of price
- * - If the returned price by a Chainlink aggregator is <= 0, the call is forwarded to a fallback oracle
+ * - Use of Pyth as first source of price
+ * - If the returned price by Pyth is <= 0 or if the Pyth price is too stale, the call is forwarded to a fallback oracle
  * - Owned by the Aave governance
  */
 contract AaveOracle is IAaveOracle {
@@ -26,6 +26,7 @@ contract AaveOracle is IAaveOracle {
   IPyth _pythOracle;
   MockPyth _mockPythOracle;
   bool _isMock;
+  uint _oracleMinFreshness;
 
   IPriceOracleGetter private _fallbackOracle;
   address public immutable override BASE_CURRENCY;
@@ -44,12 +45,12 @@ contract AaveOracle is IAaveOracle {
    * @param provider The address of the new PoolAddressesProvider
    * @param assets The addresses of the assets
    * @param sources The address of the priceID of each asset
-   * @param fallbackOracle The address of the fallback oracle to use if the data of an
-   *        aggregator is not consistent
+   * @param fallbackOracle The address of the fallback oracle to use if Pyth data is not consistent
    * @param baseCurrency The base currency used for the price quotes. If USD is used, base currency is 0x0
    * @param baseCurrencyUnit The unit of the base currency
    * @param pythOracle The address of the Pyth oracle in this network
    * @param isMock True for mock Pyth, 1 for real Pyth
+   * @param oracleMinFreshness The minimum freshness of Pyth price to be able to use that in the protocol
    */
   constructor(
     IPoolAddressesProvider provider,
@@ -59,7 +60,8 @@ contract AaveOracle is IAaveOracle {
     address baseCurrency,
     uint256 baseCurrencyUnit,
     address pythOracle,
-    bool isMock
+    bool isMock,
+    uint oracleMinFreshness
   ) {
     ADDRESSES_PROVIDER = provider;
     _setFallbackOracle(fallbackOracle);
@@ -67,7 +69,7 @@ contract AaveOracle is IAaveOracle {
     BASE_CURRENCY = baseCurrency;
     BASE_CURRENCY_UNIT = baseCurrencyUnit;
     emit BaseCurrencySet(baseCurrency, baseCurrencyUnit);
-    _setPythOracle(pythOracle, isMock);
+    _setPythOracle(pythOracle, isMock, oracleMinFreshness);
   }
 
   /// @inheritdoc IAaveOracle
@@ -112,15 +114,17 @@ contract AaveOracle is IAaveOracle {
    * @notice Internal function to set the Pyth oracle
    * @param pythOracle The address of the Pyth oracle
    * @param isMock The oracle type, True for Mock and False for real
+   * @param oracleMinFreshness The minimum freshness of Pyth price to be able to use that in the protocol
    */
-  function _setPythOracle(address pythOracle, bool isMock) internal {
+  function _setPythOracle(address pythOracle, bool isMock, uint oracleMinFreshness) internal {
     if (isMock) {
       _mockPythOracle = MockPyth(pythOracle);
     } else {
       _pythOracle = IPyth(pythOracle);
     }
     _isMock = isMock;
-    emit PythOracleUpdated(pythOracle, isMock);
+    _oracleMinFreshness = oracleMinFreshness;
+    emit PythOracleUpdated(pythOracle, isMock, oracleMinFreshness);
   }
 
   function updatePythPrice(bytes[] calldata priceUpdateData) public payable override {
@@ -217,13 +221,16 @@ contract AaveOracle is IAaveOracle {
         validTime = _pythOracle.getValidTimePeriod();
       }
       int256 price = int256(pythPrice.price);
-      bool stale;
-      if (block.timestamp > pythPrice.publishTime) {
-        stale = (block.timestamp - pythPrice.publishTime) > validTime;
+      bool stalePyth;
+      bool staleProtocol;
+      if (block.timestamp >= pythPrice.publishTime) {
+        stalePyth = (block.timestamp - pythPrice.publishTime) > validTime;
+        staleProtocol = (block.timestamp - pythPrice.publishTime) > _oracleMinFreshness;
       } else {
-        stale = (pythPrice.publishTime - block.timestamp) > validTime;
+        stalePyth = (pythPrice.publishTime - block.timestamp) > validTime;
+        staleProtocol = (pythPrice.publishTime - block.timestamp) > _oracleMinFreshness;
       }
-      if (price > 0 && !stale) {
+      if (price > 0 && !stalePyth && !staleProtocol) {
         return uint256(price);
       } else {
         return _fallbackOracle.getAssetPrice(asset);
