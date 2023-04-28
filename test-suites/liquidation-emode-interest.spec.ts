@@ -23,12 +23,16 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
     oracle: ZERO_ADDRESS,
     label: 'STABLECOINS',
   };
+  let ethToSend = '1.0';
+  let oracleType = 'pyth';
 
   before(async () => {
     const { addressesProvider, oracle } = testEnv;
 
     // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
-    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    ethToSend = '0.0';
+    oracleType = 'fallback';
   });
 
   after(async () => {
@@ -122,7 +126,12 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
     } = testEnv;
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
-    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+    }
 
     const amountDAIToBorrow = await convertToCurrencyDecimals(
       dai.address,
@@ -195,8 +204,15 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
     );
     expect(userGlobalDataAfter.totalDebtBase).to.be.lt(userGlobalDataBefore.totalDebtBase);
 
-    const collateralPrice = await aaveOracle.getAssetPrice(usdc.address);
-    const principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    let collateralPrice, principalPrice;
+    if (oracleType == 'pyth') {
+      collateralPrice = await aaveOracle.getAssetPrice(usdc.address);
+      principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      collateralPrice = await oracle.getAssetPrice(usdc.address);
+      principalPrice = await oracle.getAssetPrice(dai.address);
+    }
+
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(usdc.address))
       .decimals;
     const principalDecimals = (await helpersContract.getReserveConfigurationData(dai.address))

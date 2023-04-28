@@ -15,12 +15,16 @@ declare var hre: HardhatRuntimeEnvironment;
 
 makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEnv) => {
   const { INVALID_HF } = ProtocolErrors;
+  let ethToSend = '1.0';
+  let oracleType = 'pyth';
 
   before(async () => {
     const { addressesProvider, oracle } = testEnv;
 
     // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
-    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    ethToSend = '0.0';
+    oracleType = 'fallback';
   });
 
   after(async () => {
@@ -111,7 +115,13 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
     //user 2 borrows
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
-    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
+
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+    }
 
     const amountDAIToBorrow = await convertToCurrencyDecimals(
       dai.address,
@@ -137,20 +147,25 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
       aaveOracle,
     } = testEnv;
 
-    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
-
-    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      daiID,
-      daiPrice.percentMul(11800),
-      1,
-      0,
-      daiPrice.percentMul(11800),
-      1,
-      daiLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        daiID,
+        daiPrice.percentMul(11800),
+        1,
+        0,
+        daiPrice.percentMul(11800),
+        1,
+        daiLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+      await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11800));
+    }
     // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11800));
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
@@ -206,8 +221,14 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
     const daiReserveDataAfter = await getReserveData(helpersContract, dai.address);
     const ethReserveDataAfter = await getReserveData(helpersContract, weth.address);
 
-    const collateralPrice = await aaveOracle.getAssetPrice(weth.address);
-    const principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    let collateralPrice, principalPrice;
+    if (oracleType == 'pyth') {
+      collateralPrice = await aaveOracle.getAssetPrice(weth.address);
+      principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      collateralPrice = await oracle.getAssetPrice(weth.address);
+      principalPrice = await oracle.getAssetPrice(dai.address);
+    }
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(weth.address))
       .decimals;
@@ -322,7 +343,12 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
     //borrower borrows
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
-    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
+    let usdcPrice;
+    if (oracleType == 'pyth') {
+      usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
+    } else if (oracleType == 'fallback') {
+      usdcPrice = await oracle.getAssetPrice(usdc.address);
+    }
 
     const amountUSDCToBorrow = await convertToCurrencyDecimals(
       usdc.address,
@@ -335,18 +361,22 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
       .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address, []);
 
     //drops HF below 1
-    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
-    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      usdcID,
-      usdcPrice.percentMul(11200),
-      1,
-      0,
-      usdcPrice.percentMul(11200),
-      1,
-      usdcLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    if (oracleType == 'pyth') {
+      const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+      const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        usdcID,
+        usdcPrice.percentMul(11200),
+        1,
+        0,
+        usdcPrice.percentMul(11200),
+        1,
+        usdcLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
+    }
     // await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
 
     //mints dai to the liquidator
@@ -383,8 +413,14 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
     const usdcReserveDataAfter = await getReserveData(helpersContract, usdc.address);
     const ethReserveDataAfter = await getReserveData(helpersContract, weth.address);
 
-    const collateralPrice = await aaveOracle.getAssetPrice(weth.address);
-    const principalPrice = await aaveOracle.getAssetPrice(usdc.address);
+    let collateralPrice, principalPrice;
+    if (oracleType == 'pyth') {
+      collateralPrice = await aaveOracle.getAssetPrice(weth.address);
+      principalPrice = await aaveOracle.getAssetPrice(usdc.address);
+    } else if (oracleType == 'fallback') {
+      collateralPrice = await oracle.getAssetPrice(weth.address);
+      principalPrice = await oracle.getAssetPrice(usdc.address);
+    }
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(weth.address))
       .decimals;
@@ -467,21 +503,27 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
     await pool
       .connect(borrower.signer)
       .deposit(aave.address, amountToDeposit, borrower.address, '0');
-    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
 
     //drops HF below 1
-    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
-    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      usdcID,
-      usdcPrice.percentMul(11400),
-      1,
-      0,
-      usdcPrice.percentMul(11400),
-      1,
-      usdcLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    let usdcPrice;
+    if (oracleType == 'pyth') {
+      usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
+      const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+      const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        usdcID,
+        usdcPrice.percentMul(11400),
+        1,
+        0,
+        usdcPrice.percentMul(11400),
+        1,
+        usdcLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      usdcPrice = await oracle.getAssetPrice(usdc.address);
+      await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11400));
+    }
     // await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11400));
 
     //mints usdc to the liquidator
@@ -502,8 +544,14 @@ makeSuite('Pool Liquidation: Liquidator receiving the underlying asset', (testEn
 
     const amountToLiquidate = userReserveDataBefore.currentStableDebt.div(2);
 
-    const collateralPrice = await aaveOracle.getAssetPrice(aave.address);
-    const principalPrice = await aaveOracle.getAssetPrice(usdc.address);
+    let collateralPrice, principalPrice;
+    if (oracleType == 'pyth') {
+      collateralPrice = await aaveOracle.getAssetPrice(aave.address);
+      principalPrice = await aaveOracle.getAssetPrice(usdc.address);
+    } else if (oracleType == 'fallback') {
+      collateralPrice = await oracle.getAssetPrice(aave.address);
+      principalPrice = await oracle.getAssetPrice(usdc.address);
+    }
 
     // empty price update data
     await pool

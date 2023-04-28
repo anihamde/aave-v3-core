@@ -1,4 +1,4 @@
-import { MOCK_CHAINLINK_AGGREGATORS_PRICES } from '@aave/deploy-v3/dist/helpers/constants';
+import { MOCK_ORACLES_PRICES } from '@aave/deploy-v3/dist/helpers/constants';
 import { MockATokenRepayment } from './../types/mocks/tokens/MockATokenRepayment';
 import { waitForTx, increaseTime, ZERO_ADDRESS } from '@aave/deploy-v3';
 import { expect } from 'chai';
@@ -158,7 +158,7 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
 
     // Borrow DAI
     firstDaiBorrow = await convertToCurrencyDecimals(dai.address, '5000');
-    const daiPrice = MOCK_CHAINLINK_AGGREGATORS_PRICES.DAI;
+    const daiPrice = MOCK_ORACLES_PRICES.DAI;
     expect(await aaveOracle.getAssetPrice(dai.address)).to.be.eq(daiPrice);
 
     // craft a price update message to pass into borrow to update price alongside the operation

@@ -50,6 +50,8 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
   } = ProtocolErrors;
 
   let l2Pool: MockL2Pool;
+  let ethToSend = '1.0';
+  let oracleType = 'pyth';
 
   const POOL_ID = utils.formatBytes32String('POOL');
 
@@ -93,7 +95,9 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
     l2Pool = await MockL2Pool__factory.connect(poolAddress, await getFirstSigner());
 
     // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
-    // expect(await addressesProvider.setPriceOracle(oracle.address));
+    expect(await addressesProvider.setPriceOracle(oracle.address));
+    ethToSend = '0.0';
+    oracleType = 'fallback';
   });
 
   after(async () => {
@@ -502,7 +506,12 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
       .deposit(usdc.address, amountUSDCtoDeposit, borrower.address, '0');
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
-    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+    }
 
     const amountDAIToBorrow = userGlobalData.availableBorrowsBase
       .mul(9500)
@@ -518,18 +527,22 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
     expect(userGlobalDataAfter.currentLiquidationThreshold).to.be.equal(8500, INVALID_HF);
 
     // Increases price
-    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      daiID,
-      daiPrice.mul(2),
-      1,
-      0,
-      daiPrice.mul(2),
-      1,
-      daiLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    if (oracleType == 'pyth') {
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        daiID,
+        daiPrice.mul(2),
+        1,
+        0,
+        daiPrice.mul(2),
+        1,
+        daiLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
+    }
     // await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
     const userGlobalDataPriceChange = await pool.getUserAccountData(borrower.address);
     expect(userGlobalDataPriceChange.healthFactor).to.be.lt(parseUnits('1', 18), INVALID_HF);
@@ -576,8 +589,14 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
     const daiReserveDataAfter = await getReserveData(helpersContract, dai.address);
     const usdcReserveDataAfter = await getReserveData(helpersContract, usdc.address);
 
-    const collateralPrice = await aaveOracle.getAssetPrice(usdc.address);
-    const principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    let collateralPrice, principalPrice;
+    if (oracleType == 'pyth') {
+      collateralPrice = await aaveOracle.getAssetPrice(usdc.address);
+      principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      collateralPrice = await oracle.getAssetPrice(usdc.address);
+      principalPrice = await oracle.getAssetPrice(dai.address);
+    }
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(usdc.address))
       .decimals;
@@ -646,17 +665,23 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
       2,
       'Invalid collateral available liquidity'
     );
-    const daiLastUpdateTime2 = await aaveOracle.getLastUpdateTime(dai.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      daiID,
-      daiPrice,
-      1,
-      0,
-      daiPrice,
-      1,
-      daiLastUpdateTime2.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+
+    if (oracleType == 'pyth') {
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        daiID,
+        daiPrice,
+        1,
+        0,
+        daiPrice,
+        1,
+        daiLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      await oracle.setAssetPrice(dai.address, daiPrice);
+    }
     // await oracle.setAssetPrice(dai.address, daiPrice);
   });
 
@@ -689,7 +714,12 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
       .deposit(usdc.address, amountUSDCtoDeposit, borrower.address, '0');
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
-    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+    }
 
     const amountDAIToBorrow = userGlobalData.availableBorrowsBase
       .mul(9500)
@@ -705,18 +735,22 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
     expect(userGlobalDataAfter.currentLiquidationThreshold).to.be.equal(8500, INVALID_HF);
 
     // Increase price
-    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      daiID,
-      daiPrice.mul(2),
-      1,
-      0,
-      daiPrice.mul(2),
-      1,
-      daiLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    if (oracleType == 'pyth') {
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        daiID,
+        daiPrice.mul(2),
+        1,
+        0,
+        daiPrice.mul(2),
+        1,
+        daiLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
+    }
     // await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
     const userGlobalDataPriceChange = await pool.getUserAccountData(borrower.address);
     expect(userGlobalDataPriceChange.healthFactor).to.be.lt(parseUnits('1', 18), INVALID_HF);

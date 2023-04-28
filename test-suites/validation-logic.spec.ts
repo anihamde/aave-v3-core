@@ -33,12 +33,16 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
   } = ProtocolErrors;
 
   let snap: string;
+  let ethToSend = '1.0';
+  let oracleType = 'pyth';
 
   before(async () => {
     const { addressesProvider, oracle } = testEnv;
 
     // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
-    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    ethToSend = '0.0';
+    oracleType = 'fallback';
   });
 
   after(async () => {
@@ -275,20 +279,25 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
         []
       );
 
-    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
-
-    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      daiID,
-      daiPrice.mul(2),
-      1,
-      0,
-      daiPrice.mul(2),
-      1,
-      daiLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        daiID,
+        daiPrice.mul(2),
+        1,
+        0,
+        daiPrice.mul(2),
+        1,
+        daiLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+      await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
+    }
     // await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
 
     await expect(
@@ -878,7 +887,12 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
     await pool.connect(user.signer).supply(dai.address, parseUnits('1000', 18), user.address, 0);
 
     const userGlobalData = await pool.getUserAccountData(user.address);
-    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
+    let usdcPrice;
+    if (oracleType == 'pyth') {
+      usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
+    } else if (oracleType == 'fallback') {
+      usdcPrice = await oracle.getAssetPrice(usdc.address);
+    }
 
     const amountUSDCToBorrow = await convertToCurrencyDecimals(
       usdc.address,

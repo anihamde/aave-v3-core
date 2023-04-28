@@ -1,4 +1,4 @@
-import { MOCK_CHAINLINK_AGGREGATORS_PRICES } from '@aave/deploy-v3/dist/helpers/constants';
+import { MOCK_ORACLES_PRICES } from '@aave/deploy-v3/dist/helpers/constants';
 import { expect } from 'chai';
 import { oneEther, ONE_ADDRESS, ZERO_ADDRESS } from '../helpers/constants';
 import { ProtocolErrors } from '../helpers/types';
@@ -29,7 +29,7 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
 
   before(async () => {
     mockToken = await deployMintableERC20(['MOCK', 'MOCK', '18']);
-    assetPrice = MOCK_CHAINLINK_AGGREGATORS_PRICES.ETH;
+    assetPrice = MOCK_ORACLES_PRICES.ETH;
     mockAggregator = await deployMockAggregator(assetPrice);
   });
 
@@ -81,7 +81,7 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const daiSource = await aaveOracle.getSourceOfAsset(dai.address);
     expect(daiSource).to.be.not.eq(ZERO_ADDRESS);
 
-    const daiPrice = MOCK_CHAINLINK_AGGREGATORS_PRICES.DAI;
+    const daiPrice = MOCK_ORACLES_PRICES.DAI;
     expect(await aaveOracle.getAssetPrice(dai.address)).to.be.eq(daiPrice);
 
     // Update DAI source to AAVE source
@@ -90,7 +90,7 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
       .to.emit(aaveOracle, 'AssetSourceUpdated')
       .withArgs(dai.address, aaveSource);
 
-    const aavePrice = MOCK_CHAINLINK_AGGREGATORS_PRICES.AAVE;
+    const aavePrice = MOCK_ORACLES_PRICES.AAVE;
 
     expect(await aaveOracle.getSourceOfAsset(dai.address)).to.be.eq(aaveSource);
     expect(await aaveOracle.getAssetPrice(dai.address)).to.be.eq(aavePrice);

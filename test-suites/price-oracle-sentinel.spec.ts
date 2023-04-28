@@ -31,6 +31,8 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
 
   let sequencerOracle: SequencerOracle;
   let priceOracleSentinel: PriceOracleSentinel;
+  let ethToSend = '1.0';
+  let oracleType = 'pyth';
 
   const GRACE_PERIOD = BigNumber.from(60 * 60);
 
@@ -51,7 +53,9 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
     ).deployed();
 
     // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
-    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    ethToSend = '0.0';
+    oracleType = 'fallback';
   });
 
   after(async () => {
@@ -187,7 +191,12 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
 
       //user 2 borrows
       const userGlobalData = await pool.getUserAccountData(currBorrower.address);
-      const daiPrice = await aaveOracle.getAssetPrice(dai.address);
+      let daiPrice;
+      if (oracleType == 'pyth') {
+        daiPrice = await aaveOracle.getAssetPrice(dai.address);
+      } else if (oracleType == 'fallback') {
+        daiPrice = await oracle.getAssetPrice(dai.address);
+      }
 
       const amountDAIToBorrow = await convertToCurrencyDecimals(
         dai.address,
@@ -210,19 +219,25 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       aaveOracle,
     } = testEnv;
 
-    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
-    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      daiID,
-      daiPrice.percentMul(11000),
-      1,
-      0,
-      daiPrice.percentMul(11000),
-      1,
-      daiLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        daiID,
+        daiPrice.percentMul(11000),
+        1,
+        0,
+        daiPrice.percentMul(11000),
+        1,
+        daiLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+      await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11000));
+    }
     // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11000));
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
@@ -266,19 +281,25 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       aaveOracle,
     } = testEnv;
 
-    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
-    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      daiID,
-      daiPrice.percentMul(11000),
-      1,
-      0,
-      daiPrice.percentMul(11000),
-      1,
-      daiLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        daiID,
+        daiPrice.percentMul(11000),
+        1,
+        0,
+        daiPrice.percentMul(11000),
+        1,
+        daiLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+      await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11000));
+    }
     // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11000));
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
@@ -342,8 +363,14 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
     const daiReserveDataAfter = await getReserveData(helpersContract, dai.address);
     const ethReserveDataAfter = await getReserveData(helpersContract, weth.address);
 
-    const collateralPrice = await aaveOracle.getAssetPrice(weth.address);
-    const principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    let collateralPrice, principalPrice;
+    if (oracleType == 'pyth') {
+      collateralPrice = await aaveOracle.getAssetPrice(weth.address);
+      principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      collateralPrice = await oracle.getAssetPrice(weth.address);
+      principalPrice = await oracle.getAssetPrice(dai.address);
+    }
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(weth.address))
       .decimals;
@@ -528,19 +555,26 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       oracle,
       aaveOracle,
     } = testEnv;
-    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
-    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      daiID,
-      daiPrice.percentMul(9500),
-      1,
-      0,
-      daiPrice.percentMul(9500),
-      1,
-      daiLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        daiID,
+        daiPrice.percentMul(9500),
+        1,
+        0,
+        daiPrice.percentMul(9500),
+        1,
+        daiLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+      await oracle.setAssetPrice(dai.address, daiPrice.percentMul(9500));
+    }
     // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(9500));
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
@@ -608,8 +642,14 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
     const daiReserveDataAfter = await getReserveData(helpersContract, dai.address);
     const ethReserveDataAfter = await getReserveData(helpersContract, weth.address);
 
-    const collateralPrice = await aaveOracle.getAssetPrice(weth.address);
-    const principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    let collateralPrice, principalPrice;
+    if (oracleType == 'pyth') {
+      collateralPrice = await aaveOracle.getAssetPrice(weth.address);
+      principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      collateralPrice = await oracle.getAssetPrice(weth.address);
+      principalPrice = await oracle.getAssetPrice(dai.address);
+    }
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(weth.address))
       .decimals;

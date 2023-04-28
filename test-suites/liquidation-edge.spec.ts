@@ -18,6 +18,8 @@ import { ethers } from 'hardhat';
 
 makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
   let snap: string;
+  let ethToSend = '1.0';
+  let oracleType = 'pyth';
 
   beforeEach(async () => {
     snap = await evmSnapshot();
@@ -30,7 +32,9 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
     const { addressesProvider, oracle } = testEnv;
 
     // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
-    // await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    ethToSend = '0.0';
+    oracleType = 'fallback';
   });
 
   after(async () => {
@@ -65,20 +69,25 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
       .connect(borrower.signer)
       .deposit(weth.address, utils.parseEther('0.9'), borrower.address, 0);
 
-    const daiPrice = await aaveOracle.getAssetPrice(dai.address);
-
-    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      daiID,
-      daiPrice.percentDiv('2700'),
-      1,
-      0,
-      daiPrice.percentDiv('2700'),
-      1,
-      daiLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        daiID,
+        daiPrice.percentDiv('2700'),
+        1,
+        0,
+        daiPrice.percentDiv('2700'),
+        1,
+        daiLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+      await oracle.setAssetPrice(dai.address, daiPrice.percentDiv('2700'));
+    }
     // await oracle.setAssetPrice(dai.address, daiPrice.percentDiv('2700'));
 
     // Borrow
@@ -107,17 +116,24 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
         []
       );
 
-    const daiLastUpdateTime2 = await aaveOracle.getLastUpdateTime(dai.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      daiID,
-      daiPrice.percentMul(600_00),
-      1,
-      0,
-      daiPrice.percentMul(600_00),
-      1,
-      daiLastUpdateTime2.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        daiID,
+        daiPrice.percentMul(600_00),
+        1,
+        0,
+        daiPrice.percentMul(600_00),
+        1,
+        daiLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+      await oracle.setAssetPrice(dai.address, daiPrice.percentMul(600_00));
+    }
     // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(600_00));
 
     expect(
@@ -209,19 +225,25 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
       );
 
     // Increase usdc price to allow liquidation
-    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
-    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
-    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      usdcID,
-      usdcPrice.mul(10),
-      1,
-      0,
-      usdcPrice.mul(10),
-      1,
-      usdcLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    let usdcPrice;
+    if (oracleType == 'pyth') {
+      usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
+      const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+      const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        usdcID,
+        usdcPrice.mul(10),
+        1,
+        0,
+        usdcPrice.mul(10),
+        1,
+        usdcLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      usdcPrice = await oracle.getAssetPrice(usdc.address);
+      oracle.setAssetPrice(usdc.address, usdcPrice.mul(10));
+    }
     // await oracle.setAssetPrice(usdc.address, usdcPrice.mul(10));
 
     const daiData = await pool.getReserveData(dai.address);
@@ -350,19 +372,25 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
     // HF = (0.9 * 0.85) / (1000 * 0.0005 + 100 * 0.0005 + 100 * 0.0005) = 1.275
 
     // Increase usdc price to allow liquidation
-    const usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
-    const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
-    const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      usdcID,
-      usdcPrice.mul(10),
-      1,
-      0,
-      usdcPrice.mul(10),
-      1,
-      usdcLastUpdateTime.add(1),
-      { value: ethers.utils.parseEther('1.0') }
-    );
+    let usdcPrice;
+    if (oracleType == 'pyth') {
+      usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
+      const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+      const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+      await aaveOracle.updateWithPriceFeedUpdateData(
+        usdcID,
+        usdcPrice.mul(10),
+        1,
+        0,
+        usdcPrice.mul(10),
+        1,
+        usdcLastUpdateTime.add(1),
+        { value: ethers.utils.parseEther(ethToSend) }
+      );
+    } else if (oracleType == 'fallback') {
+      usdcPrice = await oracle.getAssetPrice(usdc.address);
+      oracle.setAssetPrice(usdc.address, usdcPrice.mul(10));
+    }
     // await oracle.setAssetPrice(usdc.address, usdcPrice.mul(10));
 
     // HF = (0.9 * 0.85) / (1000 * 0.005 + 100 * 0.0005 + 100 * 0.0005) = 0.15
