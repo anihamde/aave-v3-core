@@ -11,7 +11,7 @@ import {
   MintableERC20,
   MockAggregator,
 } from '@aave/deploy-v3';
-import { aave } from '@aave/deploy-v3/dist/types/typechain/factories';
+import { ethers } from 'hardhat';
 
 makeSuite('AaveOracle', (testEnv: TestEnv) => {
   let snap: string;
@@ -240,5 +240,116 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
       .withArgs(ONE_ADDRESS);
 
     expect(await aaveOracle.getFallbackOracle()).to.be.eq(ONE_ADDRESS);
+  });
+
+  it('Update price of mock Pyth with update arguments, get last update time', async () => {
+    const { poolAdmin, aaveOracle, dai } = testEnv;
+
+    const lastUpdateTime1 = await aaveOracle.getLastUpdateTime(dai.address);
+    const id = await aaveOracle.getSourceOfAsset(dai.address);
+    const price = 12;
+    const conf = 5;
+    const expo = 0;
+    const emaPrice = 10;
+    const emaConf = 4;
+    const publishTime = lastUpdateTime1.add(1);
+
+    await aaveOracle
+      .connect(poolAdmin.signer)
+      .updateWithPriceFeedUpdateData(id, price, conf, expo, emaPrice, emaConf, publishTime);
+
+    const daiPythPriceStruct = await aaveOracle.getPythPriceStruct(dai.address, false);
+    const daiPythEmaPriceStruct = await aaveOracle.getPythPriceStruct(dai.address, true);
+
+    expect(await daiPythPriceStruct[0]).to.be.eq(price);
+    expect(await daiPythPriceStruct[1]).to.be.eq(conf);
+    expect(await daiPythPriceStruct[2]).to.be.eq(expo);
+
+    expect(await daiPythEmaPriceStruct[0]).to.be.eq(emaPrice);
+    expect(await daiPythEmaPriceStruct[1]).to.be.eq(emaConf);
+    expect(await daiPythEmaPriceStruct[2]).to.be.eq(expo);
+
+    expect(await aaveOracle.getLastUpdateTime(dai.address)).to.be.eq(publishTime);
+    expect(await daiPythPriceStruct[3]).to.be.eq(publishTime);
+    expect(await daiPythEmaPriceStruct[3]).to.be.eq(publishTime);
+  });
+
+  it('Update multiple Pyth price feeds with byte array', async () => {
+    const { poolAdmin, aaveOracle, dai, aave } = testEnv;
+
+    const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+    const daiID = await aaveOracle.getSourceOfAsset(dai.address);
+    const daiPrice = 12;
+    const daiConf = 5;
+    const daiExpo = 0;
+    const daiEmaPrice = 10;
+    const daiEmaConf = 4;
+    const daiPublishTime = daiLastUpdateTime.add(1);
+    const daiPriceUpdateData = await aaveOracle.getPriceUpdateDataForOneFeed(
+      daiID,
+      daiPrice,
+      daiConf,
+      daiExpo,
+      daiEmaPrice,
+      daiEmaConf,
+      daiPublishTime
+    );
+
+    const aaveLastUpdateTime = await aaveOracle.getLastUpdateTime(aave.address);
+    const aaveID = await aaveOracle.getSourceOfAsset(aave.address);
+    const aavePrice = 90_000;
+    const aaveConf = 1_000;
+    const aaveExpo = -3;
+    const aaveEmaPrice = 89_932;
+    const aaveEmaConf = 1_500;
+    const aavePublishTime = aaveLastUpdateTime.add(2);
+    const aavePriceUpdateData = await aaveOracle.getPriceUpdateDataForOneFeed(
+      aaveID,
+      aavePrice,
+      aaveConf,
+      aaveExpo,
+      aaveEmaPrice,
+      aaveEmaConf,
+      aavePublishTime
+    );
+
+    // update DAI and AAVE price feeds
+    await aaveOracle
+      .connect(poolAdmin.signer)
+      .updatePythPrice([daiPriceUpdateData, aavePriceUpdateData], {
+        value: ethers.utils.parseEther('1.0'),
+      });
+
+    // verify DAI update
+    const daiPythPriceStruct = await aaveOracle.getPythPriceStruct(dai.address, false);
+    const daiPythEmaPriceStruct = await aaveOracle.getPythPriceStruct(dai.address, true);
+
+    expect(await daiPythPriceStruct[0]).to.be.eq(daiPrice);
+    expect(await daiPythPriceStruct[1]).to.be.eq(daiConf);
+    expect(await daiPythPriceStruct[2]).to.be.eq(daiExpo);
+
+    expect(await daiPythEmaPriceStruct[0]).to.be.eq(daiEmaPrice);
+    expect(await daiPythEmaPriceStruct[1]).to.be.eq(daiEmaConf);
+    expect(await daiPythEmaPriceStruct[2]).to.be.eq(daiExpo);
+
+    expect(await aaveOracle.getLastUpdateTime(dai.address)).to.be.eq(daiPublishTime);
+    expect(await daiPythPriceStruct[3]).to.be.eq(daiPublishTime);
+    expect(await daiPythEmaPriceStruct[3]).to.be.eq(daiPublishTime);
+
+    // verify AAVE update
+    const aavePythPriceStruct = await aaveOracle.getPythPriceStruct(aave.address, false);
+    const aavePythEmaPriceStruct = await aaveOracle.getPythPriceStruct(aave.address, true);
+
+    expect(await aavePythPriceStruct[0]).to.be.eq(aavePrice);
+    expect(await aavePythPriceStruct[1]).to.be.eq(aaveConf);
+    expect(await aavePythPriceStruct[2]).to.be.eq(aaveExpo);
+
+    expect(await aavePythEmaPriceStruct[0]).to.be.eq(aaveEmaPrice);
+    expect(await aavePythEmaPriceStruct[1]).to.be.eq(aaveEmaConf);
+    expect(await aavePythEmaPriceStruct[2]).to.be.eq(aaveExpo);
+
+    expect(await aaveOracle.getLastUpdateTime(aave.address)).to.be.eq(aavePublishTime);
+    expect(await aavePythPriceStruct[3]).to.be.eq(aavePublishTime);
+    expect(await aavePythEmaPriceStruct[3]).to.be.eq(aavePublishTime);
   });
 });

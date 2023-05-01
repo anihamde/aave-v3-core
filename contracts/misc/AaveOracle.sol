@@ -150,6 +150,8 @@ contract AaveOracle is IAaveOracle {
     uint64 emaConf,
     uint64 publishTime
   ) public view returns (bytes memory) {
+    require(_isMock, 'Cannot generate mock Pyth price update with real Pyth');
+
     bytes32 priceID = bytes32(uint256(uint160(id)));
     bytes memory priceFeedData = _mockPythOracle.createPriceFeedUpdateData(
       priceID,
@@ -200,6 +202,26 @@ contract AaveOracle is IAaveOracle {
     }
 
     return pythPrice.publishTime;
+  }
+
+  function getPythPriceStruct(
+    address asset,
+    bool isEma
+  ) public view returns (PythStructs.Price memory pythPriceStruct) {
+    bytes32 priceID = assetsIDs[asset];
+    if (_isMock) {
+      if (isEma) {
+        pythPriceStruct = _mockPythOracle.getEmaPriceUnsafe(priceID);
+      } else {
+        pythPriceStruct = _mockPythOracle.getPriceUnsafe(priceID);
+      }
+    } else {
+      if (isEma) {
+        pythPriceStruct = _pythOracle.getEmaPriceUnsafe(priceID);
+      } else {
+        pythPriceStruct = _pythOracle.getPriceUnsafe(priceID);
+      }
+    }
   }
 
   /// @inheritdoc IPriceOracleGetter
