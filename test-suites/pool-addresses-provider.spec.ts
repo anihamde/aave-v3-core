@@ -5,13 +5,16 @@ import { createRandomAddress } from '../helpers/misc-utils';
 import { ProtocolErrors } from '../helpers/types';
 import { ZERO_ADDRESS } from '../helpers/constants';
 import { makeSuite, TestEnv } from './helpers/make-suite';
-import { deployPool, deployMockPool } from '@aave/deploy-v3/dist/helpers/contract-deployments';
+import {
+  deployPool,
+  deployMockPool,
+} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-deployments'; //'@aave/deploy-v3/dist/helpers/contract-deployments';
 import {
   evmSnapshot,
   evmRevert,
   getFirstSigner,
   InitializableAdminUpgradeabilityProxy__factory,
-} from '@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
 import { MockPeripheryContractV1__factory, MockPeripheryContractV2__factory } from '../types';
 import { getProxyAdmin, getProxyImplementation } from '../helpers/contracts-helpers';
 

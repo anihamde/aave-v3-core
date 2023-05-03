@@ -2,9 +2,9 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish, utils } from 'ethers';
 import { impersonateAccountsHardhat, setAutomine } from '../helpers/misc-utils';
 import { MAX_UINT_AMOUNT, MAX_UNBACKED_MINT_CAP, ZERO_ADDRESS } from '../helpers/constants';
-import { deployMintableERC20 } from '@aave/deploy-v3/dist/helpers/contract-deployments';
+import { deployMintableERC20 } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-deployments'; //'@aave/deploy-v3/dist/helpers/contract-deployments';
 import { ProtocolErrors, RateMode } from '../helpers/types';
-import { getFirstSigner } from '@aave/deploy-v3/dist/helpers/utilities/signer';
+import { getFirstSigner } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/utilities/signer'; //'@aave/deploy-v3/dist/helpers/utilities/signer';
 import { topUpNonPayableWithEther } from './helpers/utils/funds';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -16,7 +16,7 @@ import {
   getMockFlashLoanReceiver,
   advanceTimeAndBlock,
   getACLManager,
-} from '@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
 import {
   MockPoolInherited__factory,
   MockReserveInterestRateStrategy__factory,
@@ -29,7 +29,7 @@ import {
 import { convertToCurrencyDecimals, getProxyImplementation } from '../helpers/contracts-helpers';
 import { ethers } from 'hardhat';
 import { deposit, getTxCostAndTimestamp } from './helpers/actions';
-import AaveConfig from '@aave/deploy-v3/dist/markets/test';
+import AaveConfig from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test'; //'@aave/deploy-v3/dist/markets/test';
 import {
   calcExpectedReserveDataAfterDeposit,
   configuration as calculationsConfiguration,

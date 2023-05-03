@@ -1,8 +1,8 @@
 const { expect } = require('chai');
 import { BigNumber, Event, utils } from 'ethers';
-import AaveConfig from '@aave/deploy-v3/dist/markets/test';
-import { waitForTx, advanceTimeAndBlock } from '@aave/deploy-v3';
-import { getACLManager } from '@aave/deploy-v3/dist/helpers/contract-getters';
+import AaveConfig from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test'; //'@aave/deploy-v3/dist/markets/test';
+import { waitForTx, advanceTimeAndBlock } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { getACLManager } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters'; //'@aave/deploy-v3/dist/helpers/contract-getters';
 import { ReserveData, UserReserveData } from './helpers/utils/interfaces';
 import { ProtocolErrors, RateMode } from '../helpers/types';
 import { MAX_UINT_AMOUNT, MAX_UNBACKED_MINT_CAP } from '../helpers/constants';

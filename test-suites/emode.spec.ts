@@ -6,7 +6,7 @@ import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
 import { parseUnits, formatUnits, parseEther } from '@ethersproject/units';
-import { evmSnapshot, evmRevert, VariableDebtToken__factory } from '@aave/deploy-v3';
+import { evmSnapshot, evmRevert, VariableDebtToken__factory } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
 
 makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
   const {

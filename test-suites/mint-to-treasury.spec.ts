@@ -4,7 +4,7 @@ import { MAX_UINT_AMOUNT, ONE_YEAR } from '../helpers/constants';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
-import { advanceTimeAndBlock } from '@aave/deploy-v3';
+import { advanceTimeAndBlock } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
 
 makeSuite('Mint To Treasury', (testEnv: TestEnv) => {
   it('User 0 deposits 1000 DAI. Borrower borrows 100 DAI. Clock moved forward one year. Calculates and verifies the amount accrued to the treasury', async () => {

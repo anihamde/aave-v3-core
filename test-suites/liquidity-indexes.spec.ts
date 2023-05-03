@@ -9,7 +9,7 @@ import {
   evmRevert,
   MockFlashLoanReceiver,
   getMockFlashLoanReceiver,
-} from '@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
 import './helpers/utils/wadraymath';
 
 declare var hre: HardhatRuntimeEnvironment;

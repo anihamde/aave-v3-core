@@ -7,7 +7,7 @@ import {
   DefaultReserveInterestRateStrategy__factory,
   IStableDebtToken__factory,
   IVariableDebtToken__factory,
-} from '@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
 import { parseUnits } from '@ethersproject/units';
 import { expect } from 'chai';
 import { utils } from 'ethers';
@@ -16,7 +16,7 @@ import { setBlocktime, timeLatest } from '../helpers/misc-utils';
 import { RateMode } from '../helpers/types';
 import { TestEnv, makeSuite } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
-import { AaveDistributionManager__factory } from '@aave/deploy-v3/dist/types/typechain/factories/@aave/safety-module/contracts/stake';
+import { AaveDistributionManager__factory } from '@anirudhtx/aave-v3-deploy-pyth/dist/types/typechain/factories/@aave/safety-module/contracts/stake'; //'@aave/deploy-v3/dist/types/typechain/factories/@aave/safety-module/contracts/stake';
 
 makeSuite('AToken: Repay', (testEnv: TestEnv) => {
   let snapShot: string;

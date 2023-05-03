@@ -3,7 +3,7 @@ import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { ProtocolErrors, RateMode } from '../helpers/types';
 import { MAX_UINT_AMOUNT } from '../helpers/constants';
 import { TestEnv, makeSuite } from './helpers/make-suite';
-import { evmRevert, evmSnapshot } from '@aave/deploy-v3';
+import { evmRevert, evmSnapshot } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
 import { parseUnits } from 'ethers/lib/utils';
 
 makeSuite('LTV validation', (testEnv: TestEnv) => {
