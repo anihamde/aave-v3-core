@@ -92,7 +92,6 @@ const hardhatConfig = {
       {
         artifacts: './temp-artifacts',
         deploy: 'node_modules/@anirudhtx/aave-v3-deploy-pyth/dist/deploy',
-        // deploy: 'node_modules/@aave/deploy-v3/dist/deploy',
       },
     ],
   },
