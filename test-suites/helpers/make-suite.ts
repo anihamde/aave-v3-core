@@ -13,7 +13,7 @@ import {
   getAaveOracle,
   getACLManager,
   getFallbackOracle,
-} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters'; //'@aave/deploy-v3/dist/helpers/contract-getters';
+} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import { tEthereumAddress } from '../../helpers/types';
 import { Pool } from '../../types/Pool';
 import { AaveProtocolDataProvider } from '../../types/AaveProtocolDataProvider';
@@ -33,7 +33,7 @@ import {
   evmSnapshot,
   evmRevert,
   getEthersSigners,
-} from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth';
 
 declare var hre: HardhatRuntimeEnvironment;
 

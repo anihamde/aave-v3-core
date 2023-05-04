@@ -1,4 +1,4 @@
-import { evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth';
 import { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { HARDHAT_CHAINID, MAX_UINT_AMOUNT, ZERO_ADDRESS } from '../helpers/constants';

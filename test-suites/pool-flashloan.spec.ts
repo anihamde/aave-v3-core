@@ -1,4 +1,3 @@
-import { deployDefaultReserveInterestRateStrategy } from '@aave/deploy-v3/dist/helpers/contract-deployments';
 import { expect } from 'chai';
 import { BigNumber, ethers, Event, utils } from 'ethers';
 import { MAX_UINT_AMOUNT } from '../helpers/constants';
@@ -10,10 +9,10 @@ import {
   getMockFlashLoanReceiver,
   getStableDebtToken,
   getVariableDebtToken,
-} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters'; //'@aave/deploy-v3/dist/helpers/contract-getters';
+} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import { TestEnv, makeSuite } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
-import { waitForTx } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { waitForTx } from '@anirudhtx/aave-v3-deploy-pyth';
 import { MockATokenRepayment__factory } from '../types';
 
 makeSuite('Pool: FlashLoan', (testEnv: TestEnv) => {

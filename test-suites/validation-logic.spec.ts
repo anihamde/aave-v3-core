@@ -7,7 +7,7 @@ import { RateMode, ProtocolErrors } from '../helpers/types';
 import { impersonateAccountsHardhat } from '../helpers/misc-utils';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
-import { waitForTx, evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { waitForTx, evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth';
 import { topUpNonPayableWithEther } from './helpers/utils/funds';
 import { ethers } from 'hardhat';
 

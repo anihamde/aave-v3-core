@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { makeSuite, TestEnv } from './helpers/make-suite';
-import { evmSnapshot, evmRevert, ZERO_ADDRESS } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { evmSnapshot, evmRevert, ZERO_ADDRESS } from '@anirudhtx/aave-v3-deploy-pyth';
 
 makeSuite('Pool: getReservesList', (testEnv: TestEnv) => {
   let snap: string;

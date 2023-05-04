@@ -8,13 +8,13 @@ import { makeSuite, TestEnv } from './helpers/make-suite';
 import {
   deployPool,
   deployMockPool,
-} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-deployments'; //'@aave/deploy-v3/dist/helpers/contract-deployments';
+} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-deployments';
 import {
   evmSnapshot,
   evmRevert,
   getFirstSigner,
   InitializableAdminUpgradeabilityProxy__factory,
-} from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth';
 import { MockPeripheryContractV1__factory, MockPeripheryContractV2__factory } from '../types';
 import { getProxyAdmin, getProxyImplementation } from '../helpers/contracts-helpers';
 

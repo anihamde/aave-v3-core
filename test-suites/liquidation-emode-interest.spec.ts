@@ -8,7 +8,7 @@ import { getReserveData, getUserData } from './helpers/utils/helpers';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { waitForTx, increaseTime } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { waitForTx, increaseTime } from '@anirudhtx/aave-v3-deploy-pyth';
 
 declare var hre: HardhatRuntimeEnvironment;
 

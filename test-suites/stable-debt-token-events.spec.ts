@@ -3,7 +3,7 @@ import {
   evmRevert,
   advanceTimeAndBlock,
   MintableERC20__factory,
-} from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { BigNumber } from '@ethersproject/bignumber';

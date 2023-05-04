@@ -12,11 +12,11 @@ import {
   evmSnapshot,
   evmRevert,
   advanceTimeAndBlock,
-} from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth';
 import { getReserveData, getUserData } from './helpers/utils/helpers';
 import { getTxCostAndTimestamp } from './helpers/actions';
-import AaveConfig from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test'; //'@aave/deploy-v3/dist/markets/test';
-import { getACLManager } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters'; //'@aave/deploy-v3/dist/helpers/contract-getters';
+import AaveConfig from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test';
+import { getACLManager } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import {
   calcExpectedReserveDataAfterMintUnbacked,
   configuration as calculationsConfiguration,

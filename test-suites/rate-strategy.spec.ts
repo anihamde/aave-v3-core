@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { BigNumberish, utils } from 'ethers';
 import { BigNumber } from '@ethersproject/bignumber';
-import { deployDefaultReserveInterestRateStrategy } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-deployments'; //'@aave/deploy-v3/dist/helpers/contract-deployments';
+import { deployDefaultReserveInterestRateStrategy } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-deployments';
 import { PERCENTAGE_FACTOR } from '../helpers/constants';
 import { AToken, DefaultReserveInterestRateStrategy, MintableERC20 } from '../types';
-import { strategyDAI } from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test/reservesConfigs'; //'@aave/deploy-v3/dist/markets/test/reservesConfigs';
-import { rateStrategyStableTwo } from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test/rateStrategies'; //'@aave/deploy-v3/dist/markets/test/rateStrategies';
+import { strategyDAI } from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test/reservesConfigs';
+import { rateStrategyStableTwo } from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test/rateStrategies';
 import { TestEnv, makeSuite } from './helpers/make-suite';
 import { ProtocolErrors, RateMode } from '../helpers/types';
 import { formatUnits } from '@ethersproject/units';

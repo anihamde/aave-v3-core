@@ -1,6 +1,6 @@
-import { MOCK_ORACLES_PRICES } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/constants'; //'@aave/deploy-v3/dist/helpers/constants';
+import { MOCK_ORACLES_PRICES } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/constants';
 import { MockATokenRepayment } from './../types/mocks/tokens/MockATokenRepayment';
-import { waitForTx, increaseTime, ZERO_ADDRESS } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { waitForTx, increaseTime, ZERO_ADDRESS } from '@anirudhtx/aave-v3-deploy-pyth';
 import { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { MAX_UINT_AMOUNT } from '../helpers/constants';

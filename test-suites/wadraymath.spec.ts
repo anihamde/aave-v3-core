@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { BigNumber } from '@ethersproject/bignumber';
 import { MAX_UINT_AMOUNT, RAY, WAD, HALF_RAY, HALF_WAD } from '../helpers/constants';
 import { WadRayMathWrapper, WadRayMathWrapper__factory } from '../types';
-import { getFirstSigner } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/utilities/signer'; //'@aave/deploy-v3/dist/helpers/utilities/signer';
+import { getFirstSigner } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/utilities/signer';
 import { makeSuite } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
 

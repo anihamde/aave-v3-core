@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { BigNumber } from '@ethersproject/bignumber';
-import { deployMockReserveConfiguration } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-deployments'; //'@aave/deploy-v3/dist/helpers/contract-deployments';
+import { deployMockReserveConfiguration } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-deployments';
 import { ProtocolErrors } from '../helpers/types';
-import { evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth';
 import { MockReserveConfiguration } from '../types';
 
 describe('ReserveConfiguration', async () => {

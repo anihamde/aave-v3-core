@@ -2,14 +2,14 @@ import { expect } from 'chai';
 import { logger, utils, Contract } from 'ethers';
 import { BigNumber } from '@ethersproject/bignumber';
 import { TransactionReceipt } from '@ethersproject/providers';
-import { getContract } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { getContract } from '@anirudhtx/aave-v3-deploy-pyth';
 import {
   getMintableERC20,
   getAToken,
   getStableDebtToken,
   getVariableDebtToken,
   getIRStrategy,
-} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters'; //'@aave/deploy-v3/dist/helpers/contract-getters';
+} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import { tEthereumAddress } from '../../../helpers/types';
 import { AToken, AaveProtocolDataProvider, Pool } from '../../../types';
 import { ReserveData, UserReserveData } from './interfaces';

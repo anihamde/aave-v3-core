@@ -8,7 +8,7 @@ import {
   getMockFlashLoanReceiver,
   getStableDebtToken,
   getVariableDebtToken,
-} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters'; //'@aave/deploy-v3/dist/helpers/contract-getters';
+} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import { TestEnv, makeSuite } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
 

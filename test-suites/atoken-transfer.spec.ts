@@ -1,4 +1,4 @@
-import { evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth';
 import { expect } from 'chai';
 import { MAX_UINT_AMOUNT } from '../helpers/constants';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';

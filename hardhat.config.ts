@@ -14,7 +14,7 @@ import 'hardhat-contract-sizer';
 import 'hardhat-dependency-compiler';
 import '@nomicfoundation/hardhat-chai-matchers';
 
-import { DEFAULT_NAMED_ACCOUNTS } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { DEFAULT_NAMED_ACCOUNTS } from '@anirudhtx/aave-v3-deploy-pyth';
 
 const DEFAULT_BLOCK_GAS_LIMIT = 12450000;
 const HARDFORK = 'london';

@@ -9,14 +9,14 @@ import {
   SequencerOracle,
   SequencerOracle__factory,
 } from '../types';
-import { getFirstSigner } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/utilities/signer'; //'@aave/deploy-v3/dist/helpers/utilities/signer';
+import { getFirstSigner } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/utilities/signer';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { calcExpectedVariableDebtTokenBalance } from './helpers/utils/calculations';
 import { getReserveData, getUserData } from './helpers/utils/helpers';
 import './helpers/utils/wadraymath';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { waitForTx, increaseTime } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { waitForTx, increaseTime } from '@anirudhtx/aave-v3-deploy-pyth';
 import { ethers } from 'hardhat';
 
 declare var hre: HardhatRuntimeEnvironment;

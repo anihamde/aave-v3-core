@@ -10,7 +10,7 @@ import {
   ZERO_ADDRESS,
 } from '../helpers/constants';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
-import { impersonateAddress } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { impersonateAddress } from '@anirudhtx/aave-v3-deploy-pyth';
 import { topUpNonPayableWithEther } from './helpers/utils/funds';
 import { parseUnits } from 'ethers/lib/utils';
 

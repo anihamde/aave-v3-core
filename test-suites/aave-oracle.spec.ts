@@ -1,4 +1,4 @@
-import { MOCK_ORACLES_PRICES } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/constants'; //'@aave/deploy-v3/dist/helpers/constants';
+import { MOCK_ORACLES_PRICES } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/constants';
 import { expect } from 'chai';
 import { oneEther, ONE_ADDRESS, ZERO_ADDRESS } from '../helpers/constants';
 import { ProtocolErrors } from '../helpers/types';
@@ -10,7 +10,7 @@ import {
   evmSnapshot,
   MintableERC20,
   MockAggregator,
-} from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth';
 import { ethers } from 'hardhat';
 
 makeSuite('AaveOracle', (testEnv: TestEnv) => {

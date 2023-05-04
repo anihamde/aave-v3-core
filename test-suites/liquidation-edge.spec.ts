@@ -13,7 +13,7 @@ import {
   AToken__factory,
   StableDebtToken__factory,
   VariableDebtToken__factory,
-} from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth';
 import { ethers } from 'hardhat';
 
 makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {

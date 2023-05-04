@@ -4,7 +4,7 @@ import { ProtocolErrors, RateMode } from '../helpers/types';
 import { MAX_UINT_AMOUNT } from '../helpers/constants';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { MockFlashLoanReceiver } from '../types/MockFlashLoanReceiver';
-import { getMockFlashLoanReceiver } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters'; //'@aave/deploy-v3/dist/helpers/contract-getters';
+import { getMockFlashLoanReceiver } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
 

@@ -6,7 +6,7 @@ import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import { getReserveData, getUserData } from './helpers/utils/helpers';
 import './helpers/utils/wadraymath';
-import { evmRevert, evmSnapshot, waitForTx } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { evmRevert, evmSnapshot, waitForTx } from '@anirudhtx/aave-v3-deploy-pyth';
 import { ethers } from 'hardhat';
 
 makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (testEnv: TestEnv) => {

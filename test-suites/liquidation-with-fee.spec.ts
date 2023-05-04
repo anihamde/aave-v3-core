@@ -8,7 +8,7 @@ import { calcExpectedStableDebtTokenBalance } from './helpers/utils/calculations
 import { getReserveData, getUserData } from './helpers/utils/helpers';
 import { makeSuite } from './helpers/make-suite';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { waitForTx, increaseTime, evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth'; //'@aave/deploy-v3';
+import { waitForTx, increaseTime, evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth';
 import { ethers } from 'hardhat';
 
 declare var hre: HardhatRuntimeEnvironment;
