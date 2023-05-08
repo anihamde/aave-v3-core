@@ -23,9 +23,8 @@ contract AaveOracle is IAaveOracle {
 
   // Map of asset price IDs (asset => priceID)
   mapping(address => bytes32) private assetsIDs;
+  address _pythOracleAddress;
   IPyth _pythOracle;
-  MockPyth _mockPythOracle;
-  bool _isMock;
   uint _oracleMinFreshness;
 
   IPriceOracleGetter private _fallbackOracle;
@@ -49,7 +48,6 @@ contract AaveOracle is IAaveOracle {
    * @param baseCurrency The base currency used for the price quotes. If USD is used, base currency is 0x0
    * @param baseCurrencyUnit The unit of the base currency
    * @param pythOracle The address of the Pyth oracle in this network
-   * @param isMock True for mock Pyth, 1 for real Pyth
    * @param oracleMinFreshness The minimum freshness of Pyth price to be able to use that in the protocol
    */
   constructor(
@@ -60,7 +58,6 @@ contract AaveOracle is IAaveOracle {
     address baseCurrency,
     uint256 baseCurrencyUnit,
     address pythOracle,
-    bool isMock,
     uint oracleMinFreshness
   ) {
     ADDRESSES_PROVIDER = provider;
@@ -69,7 +66,7 @@ contract AaveOracle is IAaveOracle {
     BASE_CURRENCY = baseCurrency;
     BASE_CURRENCY_UNIT = baseCurrencyUnit;
     emit BaseCurrencySet(baseCurrency, baseCurrencyUnit);
-    _setPythOracle(pythOracle, isMock, oracleMinFreshness);
+    _setPythOracle(pythOracle, oracleMinFreshness);
   }
 
   /// @inheritdoc IAaveOracle
@@ -113,94 +110,32 @@ contract AaveOracle is IAaveOracle {
   /**
    * @notice Internal function to set the Pyth oracle
    * @param pythOracle The address of the Pyth oracle
-   * @param isMock The oracle type, True for Mock and False for real
    * @param oracleMinFreshness The minimum freshness of Pyth price to be able to use that in the protocol
    */
-  function _setPythOracle(address pythOracle, bool isMock, uint oracleMinFreshness) internal {
-    if (isMock) {
-      _mockPythOracle = MockPyth(pythOracle);
-    } else {
-      _pythOracle = IPyth(pythOracle);
-    }
-    _isMock = isMock;
+  function _setPythOracle(address pythOracle, uint oracleMinFreshness) internal {
+    _pythOracleAddress = pythOracle;
+    _pythOracle = IPyth(pythOracle);
     _oracleMinFreshness = oracleMinFreshness;
-    emit PythOracleUpdated(pythOracle, isMock, oracleMinFreshness);
+    emit PythOracleUpdated(pythOracle, oracleMinFreshness);
+  }
+
+  function getPythOracleAddress() external returns (address) {
+    return _pythOracleAddress;
   }
 
   function updatePythPrice(bytes[] calldata priceUpdateData) public payable override {
     // Update the prices to the latest available values and pay the required fee for it. The `priceUpdateData` data
     // should be retrieved from a Pyth off-chain Price Service API using the `pyth-evm-js` package.
     if (priceUpdateData.length > 0) {
-      if (_isMock) {
-        uint fee = _mockPythOracle.getUpdateFee(priceUpdateData);
-        _mockPythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
-      } else {
-        uint fee = _pythOracle.getUpdateFee(priceUpdateData);
-        _pythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
-      }
+      uint fee = _pythOracle.getUpdateFee(priceUpdateData);
+      _pythOracle.updatePriceFeeds{value: fee}(priceUpdateData);
     }
-  }
-
-  function getPriceUpdateDataForOneFeed(
-    address id,
-    int64 price,
-    uint64 conf,
-    int32 expo,
-    int64 emaPrice,
-    uint64 emaConf,
-    uint64 publishTime
-  ) public view returns (bytes memory) {
-    require(_isMock, 'Cannot generate mock Pyth price update with real Pyth');
-
-    bytes32 priceID = bytes32(uint256(uint160(id)));
-    bytes memory priceFeedData = _mockPythOracle.createPriceFeedUpdateData(
-      priceID,
-      price,
-      conf,
-      expo,
-      emaPrice,
-      emaConf,
-      publishTime
-    );
-
-    return priceFeedData;
-  }
-
-  function updateWithPriceFeedUpdateData(
-    address id,
-    int64 price,
-    uint64 conf,
-    int32 expo,
-    int64 emaPrice,
-    uint64 emaConf,
-    uint64 publishTime
-  ) public payable {
-    require(_isMock, 'Cannot update non-mock Pyth price feed with unsigned data');
-
-    bytes memory priceFeedData = getPriceUpdateDataForOneFeed(
-      id,
-      price,
-      conf,
-      expo,
-      emaPrice,
-      emaConf,
-      publishTime
-    );
-
-    bytes[] memory updateData = new bytes[](1);
-    updateData[0] = priceFeedData;
-    _mockPythOracle.updatePriceFeeds{value: msg.value}(updateData);
   }
 
   function getLastUpdateTime(address asset) public view returns (uint) {
     bytes32 priceID = assetsIDs[asset];
     PythStructs.Price memory pythPrice;
-    if (_isMock) {
-      pythPrice = _mockPythOracle.getPriceUnsafe(priceID);
-    } else {
-      pythPrice = _pythOracle.getPriceUnsafe(priceID);
-    }
-
+    pythPrice = _pythOracle.getPriceUnsafe(priceID);
     return pythPrice.publishTime;
   }
 
@@ -209,18 +144,10 @@ contract AaveOracle is IAaveOracle {
     bool isEma
   ) public view returns (PythStructs.Price memory pythPriceStruct) {
     bytes32 priceID = assetsIDs[asset];
-    if (_isMock) {
-      if (isEma) {
-        pythPriceStruct = _mockPythOracle.getEmaPriceUnsafe(priceID);
-      } else {
-        pythPriceStruct = _mockPythOracle.getPriceUnsafe(priceID);
-      }
+    if (isEma) {
+      pythPriceStruct = _pythOracle.getEmaPriceUnsafe(priceID);
     } else {
-      if (isEma) {
-        pythPriceStruct = _pythOracle.getEmaPriceUnsafe(priceID);
-      } else {
-        pythPriceStruct = _pythOracle.getPriceUnsafe(priceID);
-      }
+      pythPriceStruct = _pythOracle.getPriceUnsafe(priceID);
     }
   }
 
@@ -235,13 +162,10 @@ contract AaveOracle is IAaveOracle {
     } else {
       PythStructs.Price memory pythPrice;
       uint validTime;
-      if (_isMock) {
-        pythPrice = _mockPythOracle.getPriceUnsafe(priceID);
-        validTime = _mockPythOracle.getValidTimePeriod();
-      } else {
-        pythPrice = _pythOracle.getPriceUnsafe(priceID);
-        validTime = _pythOracle.getValidTimePeriod();
-      }
+      // TODO: use getPriceNoOlderThan if figure out how to handle specific reverts--not sure how to in Solidity
+      pythPrice = _pythOracle.getPriceUnsafe(priceID);
+      validTime = _pythOracle.getValidTimePeriod();
+
       int256 price = int256(pythPrice.price);
       bool stalePyth;
       bool staleProtocol;
