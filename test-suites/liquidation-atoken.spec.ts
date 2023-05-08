@@ -10,6 +10,7 @@ import { makeSuite } from './helpers/make-suite';
 import { waitForTx } from '@anirudhtx/aave-v3-deploy-pyth';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { ethers } from 'hardhat';
+import Web3 from 'web3';
 
 declare var hre: HardhatRuntimeEnvironment;
 
@@ -130,6 +131,7 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
       pool,
       oracle,
       aaveOracle,
+      poolAdmin,
     } = testEnv;
 
     let daiPrice;
@@ -137,16 +139,28 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
       daiPrice = await aaveOracle.getAssetPrice(dai.address);
       const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        daiID,
-        daiPrice.percentMul(11500),
-        1,
-        0,
-        daiPrice.percentMul(11500),
-        1,
-        daiLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
+      const publishTime = daiLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          source,
+          daiPrice.percentMul(11500),
+          '1',
+          '0',
+          publishTime,
+          daiPrice.percentMul(11500),
+          '1',
+          '0',
+          publishTime,
+        ]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       daiPrice = await oracle.getAssetPrice(dai.address);
       await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11500));
@@ -357,6 +371,7 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
       aaveOracle,
       weth,
       helpersContract,
+      poolAdmin,
     } = testEnv;
 
     //mints USDC to depositor
@@ -410,18 +425,30 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
     //drops HF below 1
 
     if (oracleType == 'pyth') {
-      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+      const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
       const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        usdcID,
-        usdcPrice.percentMul(11200),
-        1,
-        0,
-        usdcPrice.percentMul(11200),
-        1,
-        daiLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(usdcID.replace('0x', ''), 64);
+      const publishTime = usdcLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          source,
+          usdcPrice.percentMul(11200),
+          '1',
+          '0',
+          publishTime,
+          usdcPrice.percentMul(11200),
+          '1',
+          '0',
+          publishTime,
+        ]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
     }

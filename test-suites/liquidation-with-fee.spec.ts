@@ -10,6 +10,7 @@ import { makeSuite } from './helpers/make-suite';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { waitForTx, increaseTime, evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth';
 import { ethers } from 'hardhat';
+import Web3 from 'web3';
 
 declare var hre: HardhatRuntimeEnvironment;
 
@@ -42,6 +43,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       aaveOracle,
       configurator,
       helpersContract,
+      poolAdmin,
     } = testEnv;
 
     const snapId = await evmSnapshot();
@@ -134,16 +136,28 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     if (oracleType == 'pyth') {
       const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
       const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        usdcID,
-        '8000000000000000',
-        1,
-        0,
-        '8000000000000000',
-        1,
-        usdcLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(usdcID.replace('0x', ''), 64);
+      const publishTime = usdcLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          source,
+          '8000000000000000',
+          '1',
+          '0',
+          publishTime,
+          '8000000000000000',
+          '1',
+          '0',
+          publishTime,
+        ]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       await oracle.setAssetPrice(usdc.address, '8000000000000000');
     }
@@ -284,6 +298,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       pool,
       oracle,
       aaveOracle,
+      poolAdmin,
     } = testEnv;
 
     let daiPrice;
@@ -291,16 +306,28 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       daiPrice = await aaveOracle.getAssetPrice(dai.address);
       const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        daiID,
-        daiPrice.percentMul(11800),
-        1,
-        0,
-        daiPrice.percentMul(11800),
-        1,
-        daiLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
+      const publishTime = daiLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          source,
+          daiPrice.percentMul(11800),
+          '1',
+          '0',
+          publishTime,
+          daiPrice.percentMul(11800),
+          '1',
+          '0',
+          publishTime,
+        ]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       daiPrice = await oracle.getAssetPrice(dai.address);
       await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11800));
@@ -488,6 +515,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       weth,
       aWETH,
       helpersContract,
+      poolAdmin,
     } = testEnv;
 
     //mints USDC to depositor
@@ -545,16 +573,28 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
       const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
       const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        usdcID,
-        usdcPrice.percentMul(11200),
-        1,
-        0,
-        usdcPrice.percentMul(11200),
-        1,
-        usdcLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(usdcID.replace('0x', ''), 64);
+      const publishTime = usdcLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          source,
+          usdcPrice.percentMul(11200),
+          '1',
+          '0',
+          publishTime,
+          usdcPrice.percentMul(11200),
+          '1',
+          '0',
+          publishTime,
+        ]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       usdcPrice = await oracle.getAssetPrice(usdc.address);
       await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
@@ -707,6 +747,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       oracle,
       aaveOracle,
       helpersContract,
+      poolAdmin,
     } = testEnv;
 
     //mints AAVE to borrower
@@ -734,16 +775,28 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
     if (oracleType == 'pyth') {
       const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
       const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        usdcID,
-        usdcPrice.percentMul(11400),
-        1,
-        0,
-        usdcPrice.percentMul(11400),
-        1,
-        usdcLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(usdcID.replace('0x', ''), 64);
+      const publishTime = usdcLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          source,
+          usdcPrice.percentMul(11400),
+          '1',
+          '0',
+          publishTime,
+          usdcPrice.percentMul(11400),
+          '1',
+          '0',
+          publishTime,
+        ]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11400));
     }
@@ -895,6 +948,7 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       aaveOracle,
       helpersContract,
       configurator,
+      poolAdmin,
     } = testEnv;
 
     const oldAaveLiquidationProtocolFee = await helpersContract.getLiquidationProtocolFee(
@@ -926,16 +980,28 @@ makeSuite('Pool Liquidation: Add fee to liquidations', (testEnv) => {
       usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
       const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
       const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        usdcID,
-        usdcPrice.percentMul(11400),
-        1,
-        0,
-        usdcPrice.percentMul(11400),
-        1,
-        usdcLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(usdcID.replace('0x', ''), 64);
+      const publishTime = usdcLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          source,
+          usdcPrice.percentMul(11400),
+          '1',
+          '0',
+          publishTime,
+          usdcPrice.percentMul(11400),
+          '1',
+          '0',
+          publishTime,
+        ]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       usdcPrice = await oracle.getAssetPrice(usdc.address);
       await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11400));

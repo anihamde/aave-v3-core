@@ -10,6 +10,7 @@ import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { waitForTx, evmSnapshot, evmRevert } from '@anirudhtx/aave-v3-deploy-pyth';
 import { topUpNonPayableWithEther } from './helpers/utils/funds';
 import { ethers } from 'hardhat';
+import Web3 from 'web3';
 
 declare var hre: HardhatRuntimeEnvironment;
 
@@ -237,7 +238,7 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
   });
 
   it('validateBorrow() borrowing when user has already a HF < threshold', async () => {
-    const { pool, users, dai, usdc, oracle, aaveOracle } = testEnv;
+    const { pool, users, dai, usdc, oracle, aaveOracle, poolAdmin } = testEnv;
     const user = users[0];
     const depositor = users[1];
 
@@ -284,16 +285,18 @@ makeSuite('ValidationLogic: Edge cases', (testEnv: TestEnv) => {
       daiPrice = await aaveOracle.getAssetPrice(dai.address);
       const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        daiID,
-        daiPrice.mul(2),
-        1,
-        0,
-        daiPrice.mul(2),
-        1,
-        daiLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
+      const publishTime = daiLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [source, daiPrice.mul(2), '1', '0', publishTime, daiPrice.mul(2), '1', '0', publishTime]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       daiPrice = await oracle.getAssetPrice(dai.address);
       await oracle.setAssetPrice(dai.address, daiPrice.mul(2));

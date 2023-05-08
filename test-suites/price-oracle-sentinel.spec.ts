@@ -18,6 +18,7 @@ import './helpers/utils/wadraymath';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { waitForTx, increaseTime } from '@anirudhtx/aave-v3-deploy-pyth';
 import { ethers } from 'hardhat';
+import Web3 from 'web3';
 
 declare var hre: HardhatRuntimeEnvironment;
 
@@ -217,6 +218,7 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       pool,
       oracle,
       aaveOracle,
+      poolAdmin,
     } = testEnv;
 
     let daiPrice;
@@ -224,16 +226,28 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       daiPrice = await aaveOracle.getAssetPrice(dai.address);
       const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        daiID,
-        daiPrice.percentMul(11000),
-        1,
-        0,
-        daiPrice.percentMul(11000),
-        1,
-        daiLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
+      const publishTime = daiLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          source,
+          daiPrice.percentMul(11000),
+          '1',
+          '0',
+          publishTime,
+          daiPrice.percentMul(11000),
+          '1',
+          '0',
+          publishTime,
+        ]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       daiPrice = await oracle.getAssetPrice(dai.address);
       await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11000));
@@ -279,6 +293,7 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       pool,
       oracle,
       aaveOracle,
+      poolAdmin,
     } = testEnv;
 
     let daiPrice;
@@ -286,16 +301,28 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       daiPrice = await aaveOracle.getAssetPrice(dai.address);
       const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        daiID,
-        daiPrice.percentMul(11000),
-        1,
-        0,
-        daiPrice.percentMul(11000),
-        1,
-        daiLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
+      const publishTime = daiLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          source,
+          daiPrice.percentMul(11000),
+          '1',
+          '0',
+          publishTime,
+          daiPrice.percentMul(11000),
+          '1',
+          '0',
+          publishTime,
+        ]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       daiPrice = await oracle.getAssetPrice(dai.address);
       await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11000));
@@ -554,6 +581,7 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       pool,
       oracle,
       aaveOracle,
+      poolAdmin,
     } = testEnv;
 
     let daiPrice;
@@ -561,16 +589,28 @@ makeSuite('PriceOracleSentinel', (testEnv: TestEnv) => {
       daiPrice = await aaveOracle.getAssetPrice(dai.address);
       const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        daiID,
-        daiPrice.percentMul(9500),
-        1,
-        0,
-        daiPrice.percentMul(9500),
-        1,
-        daiLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
+      const publishTime = daiLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          source,
+          daiPrice.percentMul(9500),
+          '1',
+          '0',
+          publishTime,
+          daiPrice.percentMul(9500),
+          '1',
+          '0',
+          publishTime,
+        ]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       daiPrice = await oracle.getAssetPrice(dai.address);
       await oracle.setAssetPrice(dai.address, daiPrice.percentMul(9500));

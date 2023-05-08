@@ -25,7 +25,7 @@ import { PriceOracle } from '../../types/PriceOracle';
 import { PoolAddressesProvider } from '../../types/PoolAddressesProvider';
 import { PoolAddressesProviderRegistry } from '../../types/PoolAddressesProviderRegistry';
 import { WETH9Mocked } from '../../types/WETH9Mocked';
-import { AaveOracle, ACLManager, StableDebtToken, VariableDebtToken } from '../../types';
+import { AaveOracle, ACLManager, IPyth, StableDebtToken, VariableDebtToken } from '../../types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { usingTenderly } from '../../helpers/tenderly-utils';
 import {

@@ -12,6 +12,7 @@ import {
   MockAggregator,
 } from '@anirudhtx/aave-v3-deploy-pyth';
 import { ethers } from 'hardhat';
+import Web3 from 'web3';
 
 makeSuite('AaveOracle', (testEnv: TestEnv) => {
   let snap: string;
@@ -55,15 +56,16 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
       .withArgs(mockToken.address, mockAggregator.address);
 
     // update mock Pyth with specified price
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      mockAggregator.address,
-      assetPrice,
-      1,
-      0,
-      assetPrice,
-      1,
-      1_600_000_000_000
+    var web3 = new Web3(Web3.givenProvider);
+    let publishTime = 1_600_000_000_000;
+    let source = '0x' + web3.utils.padLeft(mockAggregator.address.replace('0x', ''), 64);
+    const updateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [source, assetPrice, '1', '0', publishTime, assetPrice, '1', '0', publishTime]
     );
+    await aaveOracle.connect(poolAdmin.signer).updatePythPrice([updateData], {
+      value: ethers.utils.parseEther('1.0'),
+    });
 
     const sourcesPrices = (await aaveOracle.getAssetsPrices([mockToken.address])).map((x) =>
       x.toString()
@@ -128,15 +130,16 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const { poolAdmin, aaveOracle, weth } = testEnv;
 
     // update mock Pyth with specified price
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      mockAggregator.address,
-      12,
-      1,
-      0,
-      12,
-      1,
-      1_600_000_000_000
+    var web3 = new Web3(Web3.givenProvider);
+    let publishTime = 1_600_000_000_000;
+    let source = '0x' + web3.utils.padLeft(mockAggregator.address.replace('0x', ''), 64);
+    const updateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [source, '12', '1', '0', publishTime, '12', '1', '0', publishTime]
     );
+    await aaveOracle.connect(poolAdmin.signer).updatePythPrice([updateData], {
+      value: ethers.utils.parseEther('1.0'),
+    });
 
     // Add asset source for BASE_CURRENCY address
     await expect(
@@ -168,15 +171,16 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const zeroPriceMockAgg = await deployMockAggregator('0');
 
     // update mock Pyth with specified price
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      zeroPriceMockAgg.address,
-      0,
-      1,
-      0,
-      0,
-      1,
-      1_600_000_000_000
+    var web3 = new Web3(Web3.givenProvider);
+    let publishTime = 1_600_000_000_000;
+    let source = '0x' + web3.utils.padLeft(zeroPriceMockAgg.address.replace('0x', ''), 64);
+    const updateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [source, '0', '1', '0', publishTime, '0', '1', '0', publishTime]
     );
+    await aaveOracle.connect(poolAdmin.signer).updatePythPrice([updateData], {
+      value: ethers.utils.parseEther('1.0'),
+    });
 
     // Asset has no source
     expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(ZERO_ADDRESS);
@@ -200,15 +204,16 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const fallbackPrice = oneEther;
 
     // update mock Pyth with specified price
-    await aaveOracle.updateWithPriceFeedUpdateData(
-      zeroPriceMockAgg.address,
-      0,
-      1,
-      0,
-      0,
-      1,
-      1_600_000_000_000
+    var web3 = new Web3(Web3.givenProvider);
+    let publishTime = 1_600_000_000_000;
+    let source = '0x' + web3.utils.padLeft(zeroPriceMockAgg.address.replace('0x', ''), 64);
+    const updateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [source, '0', '1', '0', publishTime, '0', '1', '0', publishTime]
     );
+    await aaveOracle.connect(poolAdmin.signer).updatePythPrice([updateData], {
+      value: ethers.utils.parseEther('1.0'),
+    });
 
     // Register price on FallbackOracle
     expect(await oracle.setAssetPrice(mockToken.address, fallbackPrice));
@@ -254,9 +259,15 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const emaConf = 4;
     const publishTime = lastUpdateTime1.add(1);
 
-    await aaveOracle
-      .connect(poolAdmin.signer)
-      .updateWithPriceFeedUpdateData(id, price, conf, expo, emaPrice, emaConf, publishTime);
+    var web3 = new Web3(Web3.givenProvider);
+    let source = '0x' + web3.utils.padLeft(id.replace('0x', ''), 64);
+    const updateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [source, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
+    );
+    await aaveOracle.connect(poolAdmin.signer).updatePythPrice([updateData], {
+      value: ethers.utils.parseEther('1.0'),
+    });
 
     const daiPythPriceStruct = await aaveOracle.getPythPriceStruct(dai.address, false);
     const daiPythEmaPriceStruct = await aaveOracle.getPythPriceStruct(dai.address, true);
@@ -275,7 +286,7 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
   });
 
   it('Update multiple Pyth price feeds with byte array', async () => {
-    const { poolAdmin, aaveOracle, dai, aave } = testEnv;
+    const { poolAdmin, aaveOracle, dai, aave, pyth } = testEnv;
 
     const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
     const daiID = await aaveOracle.getSourceOfAsset(dai.address);
@@ -285,14 +296,22 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const daiEmaPrice = 10;
     const daiEmaConf = 4;
     const daiPublishTime = daiLastUpdateTime.add(1);
-    const daiPriceUpdateData = await aaveOracle.getPriceUpdateDataForOneFeed(
-      daiID,
-      daiPrice,
-      daiConf,
-      daiExpo,
-      daiEmaPrice,
-      daiEmaConf,
-      daiPublishTime
+
+    var web3 = new Web3(Web3.givenProvider);
+    let daiSource = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
+    const daiPriceUpdateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [
+        daiSource,
+        daiPrice,
+        daiConf,
+        daiExpo,
+        daiPublishTime,
+        daiEmaPrice,
+        daiEmaConf,
+        daiExpo,
+        daiPublishTime,
+      ]
     );
 
     const aaveLastUpdateTime = await aaveOracle.getLastUpdateTime(aave.address);
@@ -303,14 +322,21 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const aaveEmaPrice = 89_932;
     const aaveEmaConf = 1_500;
     const aavePublishTime = aaveLastUpdateTime.add(2);
-    const aavePriceUpdateData = await aaveOracle.getPriceUpdateDataForOneFeed(
-      aaveID,
-      aavePrice,
-      aaveConf,
-      aaveExpo,
-      aaveEmaPrice,
-      aaveEmaConf,
-      aavePublishTime
+
+    let aaveSource = '0x' + web3.utils.padLeft(aaveID.replace('0x', ''), 64);
+    const aavePriceUpdateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [
+        aaveSource,
+        aavePrice,
+        aaveConf,
+        aaveExpo,
+        aavePublishTime,
+        aaveEmaPrice,
+        aaveEmaConf,
+        aaveExpo,
+        aavePublishTime,
+      ]
     );
 
     // update DAI and AAVE price feeds

@@ -21,6 +21,7 @@ import {
   L2Encoder__factory,
 } from '../types';
 import { ethers, getChainId } from 'hardhat';
+import Web3 from 'web3';
 import {
   buildPermitParams,
   getProxyImplementation,
@@ -487,6 +488,7 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
       aaveOracle,
       pool,
       helpersContract,
+      poolAdmin,
     } = testEnv;
 
     //mints DAI to depositor
@@ -530,16 +532,18 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
     if (oracleType == 'pyth') {
       const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        daiID,
-        daiPrice.mul(2),
-        1,
-        0,
-        daiPrice.mul(2),
-        1,
-        daiLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
+      const publishTime = daiLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [source, daiPrice.mul(2), '1', '0', publishTime, daiPrice.mul(2), '1', '0', publishTime]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
     }
@@ -669,16 +673,18 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
     if (oracleType == 'pyth') {
       const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        daiID,
-        daiPrice,
-        1,
-        0,
-        daiPrice,
-        1,
-        daiLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
+      const publishTime = daiLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [source, daiPrice, '1', '0', publishTime, daiPrice, '1', '0', publishTime]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       await oracle.setAssetPrice(dai.address, daiPrice);
     }
@@ -695,6 +701,7 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
       aaveOracle,
       pool,
       helpersContract,
+      poolAdmin,
     } = testEnv;
 
     //mints DAI to depositor
@@ -738,16 +745,18 @@ makeSuite('Pool: L2 functions', (testEnv: TestEnv) => {
     if (oracleType == 'pyth') {
       const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
-      await aaveOracle.updateWithPriceFeedUpdateData(
-        daiID,
-        daiPrice.mul(2),
-        1,
-        0,
-        daiPrice.mul(2),
-        1,
-        daiLastUpdateTime.add(1),
-        { value: ethers.utils.parseEther(ethToSend) }
+
+      var web3 = new Web3(Web3.givenProvider);
+      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
+      const publishTime = daiLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [source, daiPrice.mul(2), '1', '0', publishTime, daiPrice.mul(2), '1', '0', publishTime]
       );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
     } else if (oracleType == 'fallback') {
       await oracle.setAssetPrice(dai.address, daiPrice.mul(2));
     }
