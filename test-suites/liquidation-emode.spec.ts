@@ -171,12 +171,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
       const publishTime = daiLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          daiID,
           daiPrice.mul(userGlobalDataBefore.healthFactor).div(utils.parseUnits('1', 18)),
           '1',
           '0',
@@ -212,11 +211,10 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
       const publishTime = daiLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
-        [source, daiPrice2.add(1), '1', '0', publishTime, daiPrice2.add(1), '1', '0', publishTime]
+        [daiID, daiPrice2.add(1), '1', '0', publishTime, daiPrice2.add(1), '1', '0', publishTime]
       );
 
       await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
@@ -431,12 +429,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const wethID = await aaveOracle.getSourceOfAsset(weth.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(wethID.replace('0x', ''), 64);
       const publishTime = wethLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          wethID,
           wethPrice.percentMul(9000),
           '1',
           '0',
@@ -521,12 +518,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const emodeLastUpdateTime = 1_600_000_000_000;
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(emodeID.replace('0x', ''), 64);
       const publishTime = emodeLastUpdateTime + 1;
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          emodeID,
           utils.parseUnits('1', 8),
           '1',
           '0',
@@ -551,12 +547,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
       const publishTime = daiLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          daiID,
           utils.parseUnits('0.99', 8),
           '1',
           '0',
@@ -581,12 +576,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(usdcID.replace('0x', ''), 64);
       const publishTime = usdcLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          usdcID,
           utils.parseUnits('1.01', 8),
           '1',
           '0',
@@ -611,12 +605,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const wethLastUpdateTime = await aaveOracle.getLastUpdateTime(weth.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(wethID.replace('0x', ''), 64);
       const publishTime = wethLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          wethID,
           utils.parseUnits('4000', 8),
           '1',
           '0',
@@ -723,12 +716,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const emodeLastUpdateTime2 = await aaveOracle.getLastUpdateTime(EMODE_ORACLE_ADDRESS);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(emodeID.replace('0x', ''), 64);
       const publishTime = emodeLastUpdateTime2.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          emodeID,
           oraclePrice.mul(2),
           '1',
           '0',
@@ -813,12 +805,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const emodeLastUpdateTime = 1_600_000_000_000;
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(emodeID.replace('0x', ''), 64);
       const publishTime = emodeLastUpdateTime + 1;
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          emodeID,
           utils.parseUnits('1', 8),
           '1',
           '0',
@@ -843,12 +834,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
       const publishTime = daiLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          daiID,
           utils.parseUnits('0.99', 8),
           '1',
           '0',
@@ -873,12 +863,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(usdcID.replace('0x', ''), 64);
       const publishTime = usdcLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          usdcID,
           utils.parseUnits('1.01', 8),
           '1',
           '0',
@@ -903,12 +892,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const wethLastUpdateTime = await aaveOracle.getLastUpdateTime(weth.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(wethID.replace('0x', ''), 64);
       const publishTime = wethLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          wethID,
           utils.parseUnits('4000', 8),
           '1',
           '0',
@@ -1016,12 +1004,11 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
       const emodeLastUpdateTime2 = await aaveOracle.getLastUpdateTime(EMODE_ORACLE_ADDRESS);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(emodeID.replace('0x', ''), 64);
       const publishTime = emodeLastUpdateTime2.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          emodeID,
           oraclePrice.mul(2),
           '1',
           '0',

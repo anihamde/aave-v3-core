@@ -172,10 +172,9 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
     const publishTime = (await aaveOracle.getLastUpdateTime(dai.address)).add(1);
 
     var web3 = new Web3(Web3.givenProvider);
-    let source = '0x' + web3.utils.padLeft(priceID.replace('0x', ''), 64);
     const priceUpdateData = web3.eth.abi.encodeParameters(
       ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
-      [source, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
+      [priceID, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
     );
 
     await waitForTx(
@@ -219,10 +218,9 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
     // increment last publish time by 1
     const publishTime = (await aaveOracle.getLastUpdateTime(dai.address)).add(1);
     var web3 = new Web3(Web3.givenProvider);
-    let source = '0x' + web3.utils.padLeft(priceID.replace('0x', ''), 64);
     const priceUpdateData = web3.eth.abi.encodeParameters(
       ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
-      [source, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
+      [priceID, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
     );
 
     // execute borrow
@@ -464,10 +462,9 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
     const publishTime = (await aaveOracle.getLastUpdateTime(dai.address)).add(1);
 
     var web3 = new Web3(Web3.givenProvider);
-    let source = '0x' + web3.utils.padLeft(priceID.replace('0x', ''), 64);
     const priceUpdateData = web3.eth.abi.encodeParameters(
       ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
-      [source, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
+      [priceID, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
     );
 
     // empty price update data
@@ -541,10 +538,9 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
     // increment last publish time by 1
     const publishTime = (await aaveOracle.getLastUpdateTime(dai.address)).add(1);
     var web3 = new Web3(Web3.givenProvider);
-    let source = '0x' + web3.utils.padLeft(priceID.replace('0x', ''), 64);
     const priceUpdateData = web3.eth.abi.encodeParameters(
       ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
-      [source, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
+      [priceID, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
     );
 
     // User 2 - Borrow DAI

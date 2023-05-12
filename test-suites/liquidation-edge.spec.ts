@@ -77,12 +77,11 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
       const publishTime = daiLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          daiID,
           daiPrice.percentDiv('2700'),
           '1',
           '0',
@@ -135,12 +134,11 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
       const daiID = await aaveOracle.getSourceOfAsset(dai.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
       const publishTime = daiLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
         [
-          source,
+          daiID,
           daiPrice.percentMul(600_00),
           '1',
           '0',
@@ -257,11 +255,10 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
       const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(usdcID.replace('0x', ''), 64);
       const publishTime = usdcLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
-        [source, usdcPrice.mul(10), '1', '0', publishTime, usdcPrice.mul(10), '1', '0', publishTime]
+        [usdcID, usdcPrice.mul(10), '1', '0', publishTime, usdcPrice.mul(10), '1', '0', publishTime]
       );
 
       await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
@@ -407,11 +404,10 @@ makeSuite('Pool Liquidation: Edge cases', (testEnv: TestEnv) => {
       const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
 
       var web3 = new Web3(Web3.givenProvider);
-      let source = '0x' + web3.utils.padLeft(usdcID.replace('0x', ''), 64);
       const publishTime = usdcLastUpdateTime.add(1);
       const priceUpdateData = web3.eth.abi.encodeParameters(
         ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
-        [source, usdcPrice.mul(10), '1', '0', publishTime, usdcPrice.mul(10), '1', '0', publishTime]
+        [usdcID, usdcPrice.mul(10), '1', '0', publishTime, usdcPrice.mul(10), '1', '0', publishTime]
       );
 
       await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
