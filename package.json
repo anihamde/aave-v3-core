@@ -35,7 +35,7 @@
   "devDependencies": {
     "@aave/deploy-v3": "1.51.0",
     "@aave/periphery-v3": "1.21.4",
-    "@anirudhtx/aave-v3-deploy-pyth": "1.1.4",
+    "@anirudhtx/aave-v3-deploy-pyth": "1.2.0",
     "@ethersproject/bignumber": "^5.6.2",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.5",
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
