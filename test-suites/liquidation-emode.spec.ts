@@ -3,6 +3,7 @@ import { BigNumber, utils } from 'ethers';
 import { MAX_UINT_AMOUNT, ZERO_ADDRESS } from '../helpers/constants';
 import { ProtocolErrors, RateMode } from '../helpers/types';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
+import { convertAddressToBytes32 } from '../helpers/misc-utils';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import { getReserveData, getUserData } from './helpers/utils/helpers';
 import './helpers/utils/wadraymath';
@@ -510,7 +511,7 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     const EMODE_ORACLE_ADDRESS = user1.address;
     // set source of emode asset
     if (oracleType == 'pyth') {
-      const emodeIDSet = EMODE_ORACLE_ADDRESS;
+      const emodeIDSet = convertAddressToBytes32(EMODE_ORACLE_ADDRESS);
       await expect(
         aaveOracle.connect(poolAdmin.signer).setAssetSources([EMODE_ORACLE_ADDRESS], [emodeIDSet])
       )
@@ -802,7 +803,7 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode with price change', (te
     const EMODE_ORACLE_ADDRESS = user1.address;
     // set source of emode asset
     if (oracleType == 'pyth') {
-      const emodeIDSet = EMODE_ORACLE_ADDRESS;
+      const emodeIDSet = convertAddressToBytes32(EMODE_ORACLE_ADDRESS);
       await expect(
         aaveOracle.connect(poolAdmin.signer).setAssetSources([EMODE_ORACLE_ADDRESS], [emodeIDSet])
       )

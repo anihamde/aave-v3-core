@@ -2,6 +2,7 @@ import { MOCK_ORACLES_PRICES } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers
 import { expect } from 'chai';
 import { oneEther, ONE_ADDRESS, ZERO_ADDRESS } from '../helpers/constants';
 import { ProtocolErrors } from '../helpers/types';
+import { convertAddressToBytes32 } from '../helpers/misc-utils';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import {
   deployMintableERC20,
@@ -38,7 +39,9 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const { poolAdmin, aaveOracle } = testEnv;
 
     // Asset has no source
-    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(ZERO_ADDRESS);
+    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(
+      convertAddressToBytes32(ZERO_ADDRESS)
+    );
     const priorSourcePrice = await aaveOracle.getAssetPrice(mockToken.address);
     const priorSourcesPrices = (await aaveOracle.getAssetsPrices([mockToken.address])).map((x) =>
       x.toString()
@@ -46,14 +49,15 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     expect(priorSourcePrice).to.equal('0');
     expect(priorSourcesPrices).to.eql(['0']);
 
+    console.log('CHECK', mockAggregator.address, convertAddressToBytes32(mockAggregator.address));
     // Add asset source
     await expect(
       aaveOracle
         .connect(poolAdmin.signer)
-        .setAssetSources([mockToken.address], [mockAggregator.address])
+        .setAssetSources([mockToken.address], [convertAddressToBytes32(mockAggregator.address)])
     )
       .to.emit(aaveOracle, 'AssetSourceUpdated')
-      .withArgs(mockToken.address, mockAggregator.address);
+      .withArgs(mockToken.address, convertAddressToBytes32(mockAggregator.address));
 
     // update mock Pyth with specified price
     var web3 = new Web3(Web3.givenProvider);
@@ -71,7 +75,9 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
       x.toString()
     );
 
-    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(mockAggregator.address);
+    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(
+      convertAddressToBytes32(mockAggregator.address)
+    );
     expect(await aaveOracle.getAssetPrice(mockToken.address)).to.be.eq(assetPrice);
     expect(sourcesPrices).to.eql([assetPrice]);
   });
@@ -81,7 +87,7 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
 
     // DAI token has already a source
     const daiSource = await aaveOracle.getSourceOfAsset(dai.address);
-    expect(daiSource).to.be.not.eq(ZERO_ADDRESS);
+    expect(daiSource).to.be.not.eq(convertAddressToBytes32(ZERO_ADDRESS));
 
     const daiPrice = MOCK_ORACLES_PRICES.DAI;
     expect(await aaveOracle.getAssetPrice(dai.address)).to.be.eq(daiPrice);
@@ -94,7 +100,9 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
 
     const aavePrice = MOCK_ORACLES_PRICES.AAVE;
 
-    expect(await aaveOracle.getSourceOfAsset(dai.address)).to.be.eq(aaveSource);
+    expect(await aaveOracle.getSourceOfAsset(dai.address)).to.be.eq(
+      convertAddressToBytes32(aaveSource)
+    );
     expect(await aaveOracle.getAssetPrice(dai.address)).to.be.eq(aavePrice);
   });
 
@@ -122,7 +130,9 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const { CALLER_NOT_ASSET_LISTING_OR_POOL_ADMIN } = ProtocolErrors;
 
     await expect(
-      aaveOracle.connect(user.signer).setAssetSources([mockToken.address], [mockAggregator.address])
+      aaveOracle
+        .connect(user.signer)
+        .setAssetSources([mockToken.address], [convertAddressToBytes32(mockAggregator.address)])
     ).to.be.revertedWith(CALLER_NOT_ASSET_LISTING_OR_POOL_ADMIN);
   });
 
@@ -143,10 +153,12 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
 
     // Add asset source for BASE_CURRENCY address
     await expect(
-      aaveOracle.connect(poolAdmin.signer).setAssetSources([weth.address], [mockAggregator.address])
+      aaveOracle
+        .connect(poolAdmin.signer)
+        .setAssetSources([weth.address], [convertAddressToBytes32(mockAggregator.address)])
     )
       .to.emit(aaveOracle, 'AssetSourceUpdated')
-      .withArgs(weth.address, mockAggregator.address);
+      .withArgs(weth.address, convertAddressToBytes32(mockAggregator.address));
 
     // Check returns the fixed price BASE_CURRENCY_UNIT
     expect(await aaveOracle.getAssetPrice(weth.address)).to.be.eq(12);
@@ -160,7 +172,9 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     expect(await oracle.setAssetPrice(mockToken.address, fallbackPrice));
 
     // Asset has no source
-    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(ZERO_ADDRESS);
+    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(
+      convertAddressToBytes32(ZERO_ADDRESS)
+    );
 
     // Returns 0 price
     expect(await aaveOracle.getAssetPrice(mockToken.address)).to.be.eq(fallbackPrice);
@@ -183,18 +197,22 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     });
 
     // Asset has no source
-    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(ZERO_ADDRESS);
+    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(
+      convertAddressToBytes32(ZERO_ADDRESS)
+    );
 
     // Add asset source
     await expect(
       aaveOracle
         .connect(poolAdmin.signer)
-        .setAssetSources([mockToken.address], [zeroPriceMockAgg.address])
+        .setAssetSources([mockToken.address], [convertAddressToBytes32(zeroPriceMockAgg.address)])
     )
       .to.emit(aaveOracle, 'AssetSourceUpdated')
-      .withArgs(mockToken.address, zeroPriceMockAgg.address);
+      .withArgs(mockToken.address, convertAddressToBytes32(zeroPriceMockAgg.address));
 
-    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(zeroPriceMockAgg.address);
+    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(
+      convertAddressToBytes32(zeroPriceMockAgg.address)
+    );
     expect(await aaveOracle.getAssetPrice(mockToken.address)).to.be.eq(0);
   });
 
@@ -219,18 +237,22 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     expect(await oracle.setAssetPrice(mockToken.address, fallbackPrice));
 
     // Asset has no source
-    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(ZERO_ADDRESS);
+    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(
+      convertAddressToBytes32(ZERO_ADDRESS)
+    );
 
     // Add asset source
     await expect(
       aaveOracle
         .connect(poolAdmin.signer)
-        .setAssetSources([mockToken.address], [zeroPriceMockAgg.address])
+        .setAssetSources([mockToken.address], [convertAddressToBytes32(zeroPriceMockAgg.address)])
     )
       .to.emit(aaveOracle, 'AssetSourceUpdated')
-      .withArgs(mockToken.address, zeroPriceMockAgg.address);
+      .withArgs(mockToken.address, convertAddressToBytes32(zeroPriceMockAgg.address));
 
-    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(zeroPriceMockAgg.address);
+    expect(await aaveOracle.getSourceOfAsset(mockToken.address)).to.be.eq(
+      convertAddressToBytes32(zeroPriceMockAgg.address)
+    );
     expect(await aaveOracle.getAssetPrice(mockToken.address)).to.be.eq(fallbackPrice);
   });
 
@@ -260,10 +282,9 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const publishTime = lastUpdateTime1.add(1);
 
     var web3 = new Web3(Web3.givenProvider);
-    let source = '0x' + web3.utils.padLeft(id.replace('0x', ''), 64);
     const updateData = web3.eth.abi.encodeParameters(
       ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
-      [source, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
+      [id, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
     );
     await aaveOracle.connect(poolAdmin.signer).updatePythPrice([updateData], {
       value: ethers.utils.parseEther('1.0'),
@@ -298,11 +319,10 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const daiPublishTime = daiLastUpdateTime.add(1);
 
     var web3 = new Web3(Web3.givenProvider);
-    let daiSource = '0x' + web3.utils.padLeft(daiID.replace('0x', ''), 64);
     const daiPriceUpdateData = web3.eth.abi.encodeParameters(
       ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
       [
-        daiSource,
+        daiID,
         daiPrice,
         daiConf,
         daiExpo,
@@ -323,11 +343,10 @@ makeSuite('AaveOracle', (testEnv: TestEnv) => {
     const aaveEmaConf = 1_500;
     const aavePublishTime = aaveLastUpdateTime.add(2);
 
-    let aaveSource = '0x' + web3.utils.padLeft(aaveID.replace('0x', ''), 64);
     const aavePriceUpdateData = web3.eth.abi.encodeParameters(
       ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
       [
-        aaveSource,
+        aaveID,
         aavePrice,
         aaveConf,
         aaveExpo,
