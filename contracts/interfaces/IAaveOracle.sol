@@ -22,7 +22,7 @@ interface IAaveOracle is IPriceOracleGetter {
    * @param asset The address of the asset
    * @param source The price source of the asset
    */
-  event AssetSourceUpdated(address indexed asset, address indexed source);
+  event AssetSourceUpdated(address indexed asset, bytes32 indexed source);
 
   /**
    * @dev Emitted after the address of fallback oracle is updated
@@ -46,9 +46,9 @@ interface IAaveOracle is IPriceOracleGetter {
   /**
    * @notice Sets or replaces price sources of assets
    * @param assets The addresses of the assets
-   * @param sources The addresses of the price sources
+   * @param sources The bytes32 of the price sources
    */
-  function setAssetSources(address[] calldata assets, address[] calldata sources) external;
+  function setAssetSources(address[] calldata assets, bytes32[] calldata sources) external;
 
   /**
    * @notice Sets the fallback oracle
@@ -68,7 +68,7 @@ interface IAaveOracle is IPriceOracleGetter {
    * @param asset The address of the asset
    * @return The address of the source
    */
-  function getSourceOfAsset(address asset) external view returns (address);
+  function getSourceOfAsset(address asset) external view returns (bytes32);
 
   /**
    * @notice Returns the address of the fallback oracle

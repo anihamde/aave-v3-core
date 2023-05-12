@@ -43,7 +43,7 @@ contract AaveOracle is IAaveOracle {
    * @notice Constructor
    * @param provider The address of the new PoolAddressesProvider
    * @param assets The addresses of the assets
-   * @param sources The address of the priceID of each asset
+   * @param sources The bytes32 of the priceID of each asset
    * @param fallbackOracle The address of the fallback oracle to use if Pyth data is not consistent
    * @param baseCurrency The base currency used for the price quotes. If USD is used, base currency is 0x0
    * @param baseCurrencyUnit The unit of the base currency
@@ -53,7 +53,7 @@ contract AaveOracle is IAaveOracle {
   constructor(
     IPoolAddressesProvider provider,
     address[] memory assets,
-    address[] memory sources,
+    bytes32[] memory sources,
     address fallbackOracle,
     address baseCurrency,
     uint256 baseCurrencyUnit,
@@ -72,7 +72,7 @@ contract AaveOracle is IAaveOracle {
   /// @inheritdoc IAaveOracle
   function setAssetSources(
     address[] calldata assets,
-    address[] calldata sources
+    bytes32[] calldata sources
   ) external override onlyAssetListingOrPoolAdmins {
     _setAssetsSources(assets, sources);
   }
@@ -89,10 +89,10 @@ contract AaveOracle is IAaveOracle {
    * @param assets The addresses of the assets
    * @param sources The address of the priceID of each asset
    */
-  function _setAssetsSources(address[] memory assets, address[] memory sources) internal {
+  function _setAssetsSources(address[] memory assets, bytes32[] memory sources) internal {
     require(assets.length == sources.length, Errors.INCONSISTENT_PARAMS_LENGTH);
     for (uint256 i = 0; i < assets.length; i++) {
-      bytes32 priceID = bytes32(uint256(uint160(sources[i])));
+      bytes32 priceID = sources[i];
       assetsIDs[assets[i]] = priceID;
       emit AssetSourceUpdated(assets[i], sources[i]);
     }
@@ -119,7 +119,7 @@ contract AaveOracle is IAaveOracle {
     emit PythOracleUpdated(pythOracle, oracleMinFreshness);
   }
 
-  function getPythOracleAddress() external returns (address) {
+  function getPythOracleAddress() external view returns (address) {
     return _pythOracleAddress;
   }
 
@@ -196,8 +196,8 @@ contract AaveOracle is IAaveOracle {
   }
 
   /// @inheritdoc IAaveOracle
-  function getSourceOfAsset(address asset) external view override returns (address) {
-    return address(uint160(uint256(assetsIDs[asset])));
+  function getSourceOfAsset(address asset) external view override returns (bytes32) {
+    return assetsIDs[asset];
   }
 
   /// @inheritdoc IAaveOracle
