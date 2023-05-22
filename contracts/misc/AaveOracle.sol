@@ -108,6 +108,15 @@ contract AaveOracle is IAaveOracle {
   }
 
   /**
+   * @notice External function to set the Pyth oracle
+   * @param pythOracle The address of the Pyth oracle
+   * @param oracleMinFreshness The minimum freshness of Pyth price to be able to use that in the protocol
+   */
+  function setPythOracle(address pythOracle, uint oracleMinFreshness) external {
+    _setPythOracle(pythOracle, oracleMinFreshness);
+  }
+
+  /**
    * @notice Internal function to set the Pyth oracle
    * @param pythOracle The address of the Pyth oracle
    * @param oracleMinFreshness The minimum freshness of Pyth price to be able to use that in the protocol

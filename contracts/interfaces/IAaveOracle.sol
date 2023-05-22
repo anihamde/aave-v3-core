@@ -57,6 +57,13 @@ interface IAaveOracle is IPriceOracleGetter {
   function setFallbackOracle(address fallbackOracle) external;
 
   /**
+   * @notice External function that sets the Pyth oracle
+   * @param pythOracle The address of the Pyth oracle
+   * @param oracleMinFreshness The minimum freshness (in secs) required for safe return of Pyth price
+   */
+  function setPythOracle(address pythOracle, uint oracleMinFreshness) external;
+
+  /**
    * @notice Returns a list of prices from a list of assets addresses
    * @param assets The list of assets addresses
    * @return The prices of the given assets
