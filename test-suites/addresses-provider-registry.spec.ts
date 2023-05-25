@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ProtocolErrors } from '../helpers/types';
 import { TestEnv, makeSuite } from './helpers/make-suite';
-import { ONE_ADDRESS } from '@aave/deploy-v3';
+import { ONE_ADDRESS } from '@anirudhtx/aave-v3-deploy-pyth';
 import { ethers } from 'hardhat';
 
 makeSuite('AddressesProviderRegistry', (testEnv: TestEnv) => {

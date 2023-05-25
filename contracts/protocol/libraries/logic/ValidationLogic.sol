@@ -239,7 +239,7 @@ library ValidationLogic {
     );
 
     vars.amountInBaseCurrency =
-      IPriceOracleGetter(params.oracle).getAssetPrice(
+      IPriceOracleGetter(payable(params.oracle)).getAssetPrice(
         vars.eModePriceSource != address(0) ? vars.eModePriceSource : params.asset
       ) *
       params.amount;

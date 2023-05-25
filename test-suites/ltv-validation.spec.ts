@@ -3,7 +3,7 @@ import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { ProtocolErrors, RateMode } from '../helpers/types';
 import { MAX_UINT_AMOUNT } from '../helpers/constants';
 import { TestEnv, makeSuite } from './helpers/make-suite';
-import { evmRevert, evmSnapshot } from '@aave/deploy-v3';
+import { evmRevert, evmSnapshot } from '@anirudhtx/aave-v3-deploy-pyth';
 import { parseUnits } from 'ethers/lib/utils';
 
 makeSuite('LTV validation', (testEnv: TestEnv) => {
@@ -68,7 +68,8 @@ makeSuite('LTV validation', (testEnv: TestEnv) => {
     const borrowedAmount = await convertToCurrencyDecimals(weth.address, '0.000414');
 
     expect(
-      await pool.connect(user1.signer).borrow(weth.address, borrowedAmount, 1, 0, user1.address)
+      // empty price update data
+      await pool.connect(user1.signer).borrow(weth.address, borrowedAmount, 1, 0, user1.address, [])
     );
   });
 
@@ -82,7 +83,8 @@ makeSuite('LTV validation', (testEnv: TestEnv) => {
     const withdrawnAmount = await convertToCurrencyDecimals(usdc.address, '1');
 
     await expect(
-      pool.connect(user1.signer).withdraw(usdc.address, withdrawnAmount, user1.address)
+      // empty price update data
+      pool.connect(user1.signer).withdraw(usdc.address, withdrawnAmount, user1.address, [])
     ).to.be.revertedWith(LTV_VALIDATION_FAILED);
   });
 
@@ -98,7 +100,10 @@ makeSuite('LTV validation', (testEnv: TestEnv) => {
 
     const withdrawnAmount = await convertToCurrencyDecimals(dai.address, '1');
 
-    expect(await pool.connect(user1.signer).withdraw(dai.address, withdrawnAmount, user1.address));
+    // empty price update data
+    expect(
+      await pool.connect(user1.signer).withdraw(dai.address, withdrawnAmount, user1.address, [])
+    );
 
     const aDaiBalanceAfter = await aDai.balanceOf(user1.address);
 
@@ -138,9 +143,10 @@ makeSuite('LTV validation', (testEnv: TestEnv) => {
 
     // Borrow all the weth because of issue in collateral needed.
     await expect(
+      // empty price update data
       pool
         .connect(user1.signer)
-        .borrow(weth.address, borrowWethAmount, RateMode.Variable, 0, user1.address)
+        .borrow(weth.address, borrowWethAmount, RateMode.Variable, 0, user1.address, [])
     ).to.be.revertedWith(LTV_VALIDATION_FAILED);
 
     const userData = await pool.getUserAccountData(user1.address);

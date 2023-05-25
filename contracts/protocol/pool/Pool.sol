@@ -18,6 +18,7 @@ import {IPoolAddressesProvider} from '../../interfaces/IPoolAddressesProvider.so
 import {IPool} from '../../interfaces/IPool.sol';
 import {IACLManager} from '../../interfaces/IACLManager.sol';
 import {PoolStorage} from './PoolStorage.sol';
+import {IPriceOracleGetter} from '../../interfaces/IPriceOracleGetter.sol';
 
 /**
  * @title Pool contract
@@ -198,22 +199,29 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
   function withdraw(
     address asset,
     uint256 amount,
-    address to
-  ) public virtual override returns (uint256) {
+    address to,
+    bytes[] memory priceUpdateData
+  ) public payable virtual override returns (uint256) {
+    // first update price
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
+    IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
+
+    DataTypes.ExecuteWithdrawParams memory params = DataTypes.ExecuteWithdrawParams({
+      asset: asset,
+      amount: amount,
+      to: to,
+      reservesCount: _reservesCount,
+      oracle: priceOracle,
+      userEModeCategory: _usersEModeCategory[msg.sender]
+    });
+
     return
       SupplyLogic.executeWithdraw(
         _reserves,
         _reservesList,
         _eModeCategories,
         _usersConfig[msg.sender],
-        DataTypes.ExecuteWithdrawParams({
-          asset: asset,
-          amount: amount,
-          to: to,
-          reservesCount: _reservesCount,
-          oracle: ADDRESSES_PROVIDER.getPriceOracle(),
-          userEModeCategory: _usersEModeCategory[msg.sender]
-        })
+        params
       );
   }
 
@@ -223,8 +231,13 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     uint256 amount,
     uint256 interestRateMode,
     uint16 referralCode,
-    address onBehalfOf
-  ) public virtual override {
+    address onBehalfOf,
+    bytes[] memory priceUpdateData
+  ) public payable virtual override {
+    // first update price
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
+    IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
+
     BorrowLogic.executeBorrow(
       _reserves,
       _reservesList,
@@ -240,7 +253,7 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
         releaseUnderlying: true,
         maxStableRateBorrowSizePercent: _maxStableRateBorrowSizePercent,
         reservesCount: _reservesCount,
-        oracle: ADDRESSES_PROVIDER.getPriceOracle(),
+        oracle: priceOracle,
         userEModeCategory: _usersEModeCategory[onBehalfOf],
         priceOracleSentinel: ADDRESSES_PROVIDER.getPriceOracleSentinel()
       })
@@ -342,8 +355,14 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
   /// @inheritdoc IPool
   function setUserUseReserveAsCollateral(
     address asset,
-    bool useAsCollateral
-  ) public virtual override {
+    bool useAsCollateral,
+    bytes[] memory priceUpdateData
+  ) public payable virtual override {
+    // first update price
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
+    uint256 test = IPriceOracleGetter(priceOracle).getAssetPrice(asset);
+    IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
+
     SupplyLogic.executeUseReserveAsCollateral(
       _reserves,
       _reservesList,
@@ -352,7 +371,7 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
       asset,
       useAsCollateral,
       _reservesCount,
-      ADDRESSES_PROVIDER.getPriceOracle(),
+      priceOracle,
       _usersEModeCategory[msg.sender]
     );
   }
@@ -363,8 +382,13 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     address debtAsset,
     address user,
     uint256 debtToCover,
-    bool receiveAToken
-  ) public virtual override {
+    bool receiveAToken,
+    bytes[] memory priceUpdateData
+  ) public payable override {
+    // first update price
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
+    IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
+
     LiquidationLogic.executeLiquidationCall(
       _reserves,
       _reservesList,
@@ -377,7 +401,7 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
         debtAsset: debtAsset,
         user: user,
         receiveAToken: receiveAToken,
-        priceOracle: ADDRESSES_PROVIDER.getPriceOracle(),
+        priceOracle: priceOracle,
         userEModeCategory: _usersEModeCategory[user],
         priceOracleSentinel: ADDRESSES_PROVIDER.getPriceOracleSentinel()
       })
@@ -392,8 +416,13 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     uint256[] calldata interestRateModes,
     address onBehalfOf,
     bytes calldata params,
-    uint16 referralCode
-  ) public virtual override {
+    uint16 referralCode,
+    bytes[] memory priceUpdateData
+  ) public payable virtual override {
+    // first update price
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
+    IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
+
     DataTypes.FlashloanParams memory flashParams = DataTypes.FlashloanParams({
       receiverAddress: receiverAddress,
       assets: assets,
@@ -471,19 +500,18 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
       uint256 healthFactor
     )
   {
-    return
-      PoolLogic.executeGetUserAccountData(
-        _reserves,
-        _reservesList,
-        _eModeCategories,
-        DataTypes.CalculateUserAccountDataParams({
-          userConfig: _usersConfig[user],
-          reservesCount: _reservesCount,
-          user: user,
-          oracle: ADDRESSES_PROVIDER.getPriceOracle(),
-          userEModeCategory: _usersEModeCategory[user]
-        })
-      );
+    // don't update the Pyth price first, as this is a view function
+
+    DataTypes.CalculateUserAccountDataParams memory params = DataTypes
+      .CalculateUserAccountDataParams({
+        userConfig: _usersConfig[user],
+        reservesCount: _reservesCount,
+        user: user,
+        oracle: ADDRESSES_PROVIDER.getPriceOracle(),
+        userEModeCategory: _usersEModeCategory[user]
+      });
+
+    return PoolLogic.executeGetUserAccountData(_reserves, _reservesList, _eModeCategories, params);
   }
 
   /// @inheritdoc IPool
@@ -572,25 +600,32 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
     address to,
     uint256 amount,
     uint256 balanceFromBefore,
-    uint256 balanceToBefore
-  ) external virtual override {
+    uint256 balanceToBefore,
+    bytes[] memory priceUpdateData
+  ) public payable virtual override {
+    // first update price
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
+    IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
+
+    DataTypes.FinalizeTransferParams memory params = DataTypes.FinalizeTransferParams({
+      asset: asset,
+      from: from,
+      to: to,
+      amount: amount,
+      balanceFromBefore: balanceFromBefore,
+      balanceToBefore: balanceToBefore,
+      reservesCount: _reservesCount,
+      oracle: priceOracle,
+      fromEModeCategory: _usersEModeCategory[from]
+    });
+
     require(msg.sender == _reserves[asset].aTokenAddress, Errors.CALLER_NOT_ATOKEN);
     SupplyLogic.executeFinalizeTransfer(
       _reserves,
       _reservesList,
       _eModeCategories,
       _usersConfig,
-      DataTypes.FinalizeTransferParams({
-        asset: asset,
-        from: from,
-        to: to,
-        amount: amount,
-        balanceFromBefore: balanceFromBefore,
-        balanceToBefore: balanceToBefore,
-        reservesCount: _reservesCount,
-        oracle: ADDRESSES_PROVIDER.getPriceOracle(),
-        fromEModeCategory: _usersEModeCategory[from]
-      })
+      params
     );
   }
 
@@ -680,18 +715,27 @@ contract Pool is VersionedInitializable, PoolStorage, IPool {
   }
 
   /// @inheritdoc IPool
-  function setUserEMode(uint8 categoryId) external virtual override {
+  function setUserEMode(
+    uint8 categoryId,
+    bytes[] memory priceUpdateData
+  ) public payable virtual override {
+    // first update price
+    address payable priceOracle = payable(ADDRESSES_PROVIDER.getPriceOracle());
+    IPriceOracleGetter(priceOracle).updatePythPrice{value: msg.value}(priceUpdateData);
+
+    DataTypes.ExecuteSetUserEModeParams memory params = DataTypes.ExecuteSetUserEModeParams({
+      reservesCount: _reservesCount,
+      oracle: priceOracle,
+      categoryId: categoryId
+    });
+
     EModeLogic.executeSetUserEMode(
       _reserves,
       _reservesList,
       _eModeCategories,
       _usersEModeCategory,
       _usersConfig[msg.sender],
-      DataTypes.ExecuteSetUserEModeParams({
-        reservesCount: _reservesCount,
-        oracle: ADDRESSES_PROVIDER.getPriceOracle(),
-        categoryId: categoryId
-      })
+      params
     );
   }
 

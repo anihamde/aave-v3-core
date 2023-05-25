@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { utils } from 'ethers';
-import { advanceTimeAndBlock } from '@aave/deploy-v3';
+import { advanceTimeAndBlock } from '@anirudhtx/aave-v3-deploy-pyth';
 import { MAX_UINT_AMOUNT, MAX_BORROW_CAP } from '../helpers/constants';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { ProtocolErrors, RateMode } from '../helpers/types';
@@ -94,22 +94,26 @@ makeSuite('PoolConfigurator: Borrow Cap', (testEnv: TestEnv) => {
 
     // Borrow
     expect(
+      // empty price update data
       await pool.borrow(
         usdc.address,
         await convertToCurrencyDecimals(usdc.address, borrowedAmount),
         2,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     );
 
     expect(
+      // empty price update data
       await pool.borrow(
         dai.address,
         await convertToCurrencyDecimals(dai.address, borrowedAmount),
         1,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     );
   });
@@ -140,22 +144,26 @@ makeSuite('PoolConfigurator: Borrow Cap', (testEnv: TestEnv) => {
     const borrowedAmount = '10';
 
     await expect(
+      // empty price update data
       pool.borrow(
         usdc.address,
         await convertToCurrencyDecimals(usdc.address, borrowedAmount),
         2,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     ).to.be.revertedWith(BORROW_CAP_EXCEEDED);
 
     await expect(
+      // empty price update data
       pool.borrow(
         dai.address,
         await convertToCurrencyDecimals(dai.address, borrowedAmount),
         2,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     ).to.be.revertedWith(BORROW_CAP_EXCEEDED);
   });
@@ -198,22 +206,26 @@ makeSuite('PoolConfigurator: Borrow Cap', (testEnv: TestEnv) => {
 
     const borrowedAmount = '10';
     expect(
+      // empty price update data
       await pool.borrow(
         usdc.address,
         await convertToCurrencyDecimals(usdc.address, borrowedAmount),
         2,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     );
 
     expect(
+      // empty price update data
       await pool.borrow(
         dai.address,
         await convertToCurrencyDecimals(dai.address, borrowedAmount),
         1,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     );
   });
@@ -238,12 +250,14 @@ makeSuite('PoolConfigurator: Borrow Cap', (testEnv: TestEnv) => {
 
     const borrowedAmount = '2';
 
+    // empty price update data
     await pool.borrow(
       weth.address,
       await convertToCurrencyDecimals(weth.address, borrowedAmount),
       RateMode.Variable,
       0,
-      deployer.address
+      deployer.address,
+      []
     );
   });
 
@@ -265,12 +279,14 @@ makeSuite('PoolConfigurator: Borrow Cap', (testEnv: TestEnv) => {
 
     const borrowedAmount = '1';
     await expect(
+      // empty price update data
       pool.borrow(
         weth.address,
         await convertToCurrencyDecimals(weth.address, borrowedAmount),
         RateMode.Variable,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     ).to.be.revertedWith(BORROW_CAP_EXCEEDED);
   });
@@ -280,22 +296,26 @@ makeSuite('PoolConfigurator: Borrow Cap', (testEnv: TestEnv) => {
 
     const borrowedAmount = '99';
     expect(
+      // empty price update data
       await pool.borrow(
         usdc.address,
         await convertToCurrencyDecimals(usdc.address, borrowedAmount),
         2,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     );
 
     expect(
+      // empty price update data
       await pool.borrow(
         dai.address,
         await convertToCurrencyDecimals(dai.address, borrowedAmount),
         1,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     );
   });
@@ -326,22 +346,26 @@ makeSuite('PoolConfigurator: Borrow Cap', (testEnv: TestEnv) => {
 
     const borrowedAmount = '100';
     expect(
+      // empty price update data
       await pool.borrow(
         usdc.address,
         await convertToCurrencyDecimals(usdc.address, borrowedAmount),
         1,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     );
 
     expect(
+      // empty price update data
       await pool.borrow(
         dai.address,
         await convertToCurrencyDecimals(dai.address, borrowedAmount),
         2,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     );
   });
@@ -372,22 +396,26 @@ makeSuite('PoolConfigurator: Borrow Cap', (testEnv: TestEnv) => {
 
     const borrowedAmount = '100';
     await expect(
+      // empty price update data
       pool.borrow(
         usdc.address,
         await convertToCurrencyDecimals(usdc.address, borrowedAmount),
         1,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     ).to.be.revertedWith(BORROW_CAP_EXCEEDED);
 
     await expect(
+      // empty price update data
       pool.borrow(
         dai.address,
         await convertToCurrencyDecimals(dai.address, borrowedAmount),
         2,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     ).to.be.revertedWith(BORROW_CAP_EXCEEDED);
   });
@@ -418,21 +446,25 @@ makeSuite('PoolConfigurator: Borrow Cap', (testEnv: TestEnv) => {
 
     const borrowedAmount = '100';
     expect(
+      // empty price update data
       await pool.borrow(
         usdc.address,
         await convertToCurrencyDecimals(usdc.address, borrowedAmount),
         1,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     );
     expect(
+      // empty price update data
       await pool.borrow(
         dai.address,
         await convertToCurrencyDecimals(dai.address, borrowedAmount),
         2,
         0,
-        deployer.address
+        deployer.address,
+        []
       )
     );
   });

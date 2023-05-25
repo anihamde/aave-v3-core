@@ -6,7 +6,7 @@ import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { ProtocolErrors } from '../helpers/types';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import { topUpNonPayableWithEther } from './helpers/utils/funds';
-import { evmRevert, evmSnapshot, waitForTx } from '@aave/deploy-v3';
+import { evmRevert, evmSnapshot, waitForTx } from '@anirudhtx/aave-v3-deploy-pyth';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 declare var hre: HardhatRuntimeEnvironment;

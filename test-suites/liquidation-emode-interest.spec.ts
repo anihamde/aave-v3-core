@@ -8,7 +8,7 @@ import { getReserveData, getUserData } from './helpers/utils/helpers';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { waitForTx, increaseTime } from '@aave/deploy-v3';
+import { waitForTx, increaseTime } from '@anirudhtx/aave-v3-deploy-pyth';
 
 declare var hre: HardhatRuntimeEnvironment;
 
@@ -23,11 +23,16 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
     oracle: ZERO_ADDRESS,
     label: 'STABLECOINS',
   };
+  let ethToSend = '1.0';
+  let oracleType = 'pyth';
 
   before(async () => {
     const { addressesProvider, oracle } = testEnv;
 
+    // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
     await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    ethToSend = '0.0';
+    oracleType = 'fallback';
   });
 
   after(async () => {
@@ -107,7 +112,8 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
       .connect(borrower.signer)
       .supply(usdc.address, utils.parseUnits('10000', 6), borrower.address, 0);
 
-    await pool.connect(borrower.signer).setUserEMode(CATEGORY.id);
+    // empty price update data
+    await pool.connect(borrower.signer).setUserEMode(CATEGORY.id, []);
   });
 
   it('Borrow as much DAI as possible', async () => {
@@ -116,19 +122,26 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
       users: [, borrower],
       dai,
       oracle,
+      aaveOracle,
     } = testEnv;
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
-    const daiPrice = await oracle.getAssetPrice(dai.address);
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+    }
 
     const amountDAIToBorrow = await convertToCurrencyDecimals(
       dai.address,
       userGlobalData.availableBorrowsBase.div(daiPrice).toString()
     );
 
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, 0, borrower.address);
+      .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, 0, borrower.address, []);
   });
 
   it('Drop HF below 1', async () => {
@@ -152,6 +165,7 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
       users: [, borrower, liquidator],
       pool,
       oracle,
+      aaveOracle,
       helpersContract,
     } = testEnv;
 
@@ -170,9 +184,10 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
     const amountToLiquidate = userReserveDataBefore.currentVariableDebt.div(2);
     const userGlobalDataBefore = await pool.getUserAccountData(borrower.address);
 
+    // empty price update data
     const tx = await pool
       .connect(liquidator.signer)
-      .liquidationCall(usdc.address, dai.address, borrower.address, amountToLiquidate, false);
+      .liquidationCall(usdc.address, dai.address, borrower.address, amountToLiquidate, false, []);
 
     const daiReserveDataAfter = await getReserveData(helpersContract, dai.address);
     const usdcReserveDataAfter = await getReserveData(helpersContract, usdc.address);
@@ -189,8 +204,15 @@ makeSuite('Pool Liquidation: Liquidates borrows in eMode through interest', (tes
     );
     expect(userGlobalDataAfter.totalDebtBase).to.be.lt(userGlobalDataBefore.totalDebtBase);
 
-    const collateralPrice = await oracle.getAssetPrice(usdc.address);
-    const principalPrice = await oracle.getAssetPrice(dai.address);
+    let collateralPrice, principalPrice;
+    if (oracleType == 'pyth') {
+      collateralPrice = await aaveOracle.getAssetPrice(usdc.address);
+      principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      collateralPrice = await oracle.getAssetPrice(usdc.address);
+      principalPrice = await oracle.getAssetPrice(dai.address);
+    }
+
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(usdc.address))
       .decimals;
     const principalDecimals = (await helpersContract.getReserveConfigurationData(dai.address))

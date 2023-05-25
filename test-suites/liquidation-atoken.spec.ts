@@ -7,8 +7,10 @@ import { ProtocolErrors, RateMode } from '../helpers/types';
 import { calcExpectedVariableDebtTokenBalance } from './helpers/utils/calculations';
 import { getUserData, getReserveData } from './helpers/utils/helpers';
 import { makeSuite } from './helpers/make-suite';
-import { waitForTx } from '@aave/deploy-v3';
+import { waitForTx } from '@anirudhtx/aave-v3-deploy-pyth';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { ethers } from 'hardhat';
+import Web3 from 'web3';
 
 declare var hre: HardhatRuntimeEnvironment;
 
@@ -21,13 +23,18 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
   } = ProtocolErrors;
 
   let oracleBaseDecimals: number;
+  let ethToSend = '1.0';
+  let oracleType = 'pyth';
 
   before(async () => {
     const { aaveOracle, addressesProvider, oracle, deployer, pool, configurator, aDai, dai } =
       testEnv;
     oracleBaseDecimals = (await (await aaveOracle.BASE_CURRENCY_UNIT()).toString().length) - 1;
 
+    // TODO: why reset the oracle in addressesProvider from AaveOracle address (is IAaveOracle is IPriceOracleGetter) to PriceOracle address (is IPriceOracle), which doesnt inherit IPriceOracleGetter?
     await waitForTx(await addressesProvider.setPriceOracle(oracle.address));
+    ethToSend = '0.0';
+    oracleType = 'fallback';
 
     const aTokenRepayImpl = await new MockATokenRepayment__factory(deployer.signer).deploy(
       pool.address
@@ -56,6 +63,7 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
       users: [depositor, borrower],
       pool,
       oracle,
+      aaveOracle,
     } = testEnv;
 
     //mints DAI to depositor
@@ -87,14 +95,20 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
 
     //user 2 borrows
     const userGlobalData = await pool.getUserAccountData(borrower.address);
-    const daiPrice = await oracle.getAssetPrice(dai.address);
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+    }
     const amountDAIToBorrow = await convertToCurrencyDecimals(
       dai.address,
       userGlobalData.availableBorrowsBase.div(daiPrice.toString()).percentMul(9500).toString()
     );
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, '0', borrower.address);
+      .borrow(dai.address, amountDAIToBorrow, RateMode.Variable, '0', borrower.address, []);
 
     const userGlobalDataAfter = await pool.getUserAccountData(borrower.address);
 
@@ -105,7 +119,8 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
 
     //someone tries to liquidate user 2
     await expect(
-      pool.liquidationCall(weth.address, dai.address, borrower.address, 1, true)
+      // empty price update data
+      pool.liquidationCall(weth.address, dai.address, borrower.address, 1, true, [])
     ).to.be.revertedWith(HEALTH_FACTOR_NOT_BELOW_THRESHOLD);
   });
 
@@ -116,11 +131,40 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
       pool,
       oracle,
       aaveOracle,
+      poolAdmin,
     } = testEnv;
 
-    const daiPrice = await oracle.getAssetPrice(dai.address);
+    let daiPrice;
+    if (oracleType == 'pyth') {
+      daiPrice = await aaveOracle.getAssetPrice(dai.address);
+      const daiLastUpdateTime = await aaveOracle.getLastUpdateTime(dai.address);
+      const daiID = await aaveOracle.getSourceOfAsset(dai.address);
 
-    await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11500));
+      var web3 = new Web3(Web3.givenProvider);
+      const publishTime = daiLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          daiID,
+          daiPrice.percentMul(11500),
+          '1',
+          '0',
+          publishTime,
+          daiPrice.percentMul(11500),
+          '1',
+          '0',
+          publishTime,
+        ]
+      );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
+    } else if (oracleType == 'fallback') {
+      daiPrice = await oracle.getAssetPrice(dai.address);
+      await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11500));
+    }
+    // await oracle.setAssetPrice(dai.address, daiPrice.percentMul(11500));
 
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
@@ -135,7 +179,8 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
     } = testEnv;
     //user 2 tries to borrow
     await expect(
-      pool.liquidationCall(weth.address, weth.address, borrower.address, oneEther, true)
+      // empty price update data
+      pool.liquidationCall(weth.address, weth.address, borrower.address, oneEther, true, [])
     ).to.be.revertedWith(SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER);
   });
 
@@ -147,7 +192,8 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
     } = testEnv;
 
     await expect(
-      pool.liquidationCall(dai.address, dai.address, borrower.address, oneEther, true)
+      // empty price update data
+      pool.liquidationCall(dai.address, dai.address, borrower.address, oneEther, true, [])
     ).to.be.revertedWith(COLLATERAL_CANNOT_BE_LIQUIDATED);
   });
 
@@ -159,6 +205,7 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
       weth,
       users: [, borrower],
       oracle,
+      aaveOracle,
       helpersContract,
       deployer,
     } = testEnv;
@@ -190,12 +237,14 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
     const amountToLiquidate = userReserveDataBefore.currentVariableDebt.div(2);
 
     // The supply is the same, but there should be a change in who has what. The liquidator should have received what the borrower lost.
+    // empty price update data
     const tx = await pool.liquidationCall(
       weth.address,
       dai.address,
       borrower.address,
       amountToLiquidate,
-      true
+      true,
+      []
     );
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
@@ -213,8 +262,14 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
     const daiReserveDataAfter = await getReserveData(helpersContract, dai.address);
     const ethReserveDataAfter = await getReserveData(helpersContract, weth.address);
 
-    const collateralPrice = await oracle.getAssetPrice(weth.address);
-    const principalPrice = await oracle.getAssetPrice(dai.address);
+    let collateralPrice, principalPrice;
+    if (oracleType == 'pyth') {
+      collateralPrice = await aaveOracle.getAssetPrice(weth.address);
+      principalPrice = await aaveOracle.getAssetPrice(dai.address);
+    } else if (oracleType == 'fallback') {
+      collateralPrice = await oracle.getAssetPrice(weth.address);
+      principalPrice = await oracle.getAssetPrice(dai.address);
+    }
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(weth.address))
       .decimals;
@@ -312,8 +367,10 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
       pool,
       usdc,
       oracle,
+      aaveOracle,
       weth,
       helpersContract,
+      poolAdmin,
     } = testEnv;
 
     //mints USDC to depositor
@@ -347,20 +404,53 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
     //user 4 borrows
     const userGlobalData = await pool.getUserAccountData(borrower.address);
 
-    const usdcPrice = await oracle.getAssetPrice(usdc.address);
+    let usdcPrice;
+    if (oracleType == 'pyth') {
+      usdcPrice = await aaveOracle.getAssetPrice(usdc.address);
+    } else if (oracleType == 'fallback') {
+      usdcPrice = await oracle.getAssetPrice(usdc.address);
+    }
 
     const amountUSDCToBorrow = await convertToCurrencyDecimals(
       usdc.address,
       userGlobalData.availableBorrowsBase.div(usdcPrice).percentMul(9502).toString()
     );
 
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address);
+      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address, []);
 
     //drops HF below 1
 
-    await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
+    if (oracleType == 'pyth') {
+      const usdcLastUpdateTime = await aaveOracle.getLastUpdateTime(usdc.address);
+      const usdcID = await aaveOracle.getSourceOfAsset(usdc.address);
+
+      var web3 = new Web3(Web3.givenProvider);
+      const publishTime = usdcLastUpdateTime.add(1);
+      const priceUpdateData = web3.eth.abi.encodeParameters(
+        ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+        [
+          usdcID,
+          usdcPrice.percentMul(11200),
+          '1',
+          '0',
+          publishTime,
+          usdcPrice.percentMul(11200),
+          '1',
+          '0',
+          publishTime,
+        ]
+      );
+
+      await aaveOracle.connect(poolAdmin.signer).updatePythPrice([priceUpdateData], {
+        value: ethers.utils.parseEther(ethToSend),
+      });
+    } else if (oracleType == 'fallback') {
+      await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
+    }
+    // await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(11200));
 
     //mints dai to the liquidator
 
@@ -385,12 +475,14 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
 
     const amountToLiquidate = userReserveDataBefore.currentStableDebt.div(2);
 
+    // empty price update data
     await pool.liquidationCall(
       weth.address,
       usdc.address,
       borrower.address,
       amountToLiquidate,
-      true
+      true,
+      []
     );
 
     const userReserveDataAfter = await helpersContract.getUserReserveData(
@@ -408,8 +500,14 @@ makeSuite('Pool Liquidation: Liquidator receiving aToken', (testEnv) => {
     const usdcReserveDataAfter = await getReserveData(helpersContract, usdc.address);
     const ethReserveDataAfter = await getReserveData(helpersContract, weth.address);
 
-    const collateralPrice = await oracle.getAssetPrice(weth.address);
-    const principalPrice = await oracle.getAssetPrice(usdc.address);
+    let collateralPrice, principalPrice;
+    if (oracleType == 'pyth') {
+      collateralPrice = await aaveOracle.getAssetPrice(weth.address);
+      principalPrice = await aaveOracle.getAssetPrice(usdc.address);
+    } else if (oracleType == 'fallback') {
+      collateralPrice = await oracle.getAssetPrice(weth.address);
+      principalPrice = await oracle.getAssetPrice(usdc.address);
+    }
 
     const collateralDecimals = (await helpersContract.getReserveConfigurationData(weth.address))
       .decimals;

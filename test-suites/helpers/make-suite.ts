@@ -13,7 +13,7 @@ import {
   getAaveOracle,
   getACLManager,
   getFallbackOracle,
-} from '@aave/deploy-v3/dist/helpers/contract-getters';
+} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import { tEthereumAddress } from '../../helpers/types';
 import { Pool } from '../../types/Pool';
 import { AaveProtocolDataProvider } from '../../types/AaveProtocolDataProvider';
@@ -25,10 +25,15 @@ import { PriceOracle } from '../../types/PriceOracle';
 import { PoolAddressesProvider } from '../../types/PoolAddressesProvider';
 import { PoolAddressesProviderRegistry } from '../../types/PoolAddressesProviderRegistry';
 import { WETH9Mocked } from '../../types/WETH9Mocked';
-import { AaveOracle, ACLManager, StableDebtToken, VariableDebtToken } from '../../types';
+import { AaveOracle, ACLManager, IPyth, StableDebtToken, VariableDebtToken } from '../../types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { usingTenderly } from '../../helpers/tenderly-utils';
-import { waitForTx, evmSnapshot, evmRevert, getEthersSigners } from '@aave/deploy-v3';
+import {
+  waitForTx,
+  evmSnapshot,
+  evmRevert,
+  getEthersSigners,
+} from '@anirudhtx/aave-v3-deploy-pyth';
 
 declare var hre: HardhatRuntimeEnvironment;
 

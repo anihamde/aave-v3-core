@@ -3,7 +3,7 @@ import { BigNumberish, BigNumber, utils } from 'ethers';
 import { impersonateAccountsHardhat } from '../helpers/misc-utils';
 import { MAX_UINT_AMOUNT, ZERO_ADDRESS } from '../helpers/constants';
 import { ProtocolErrors, RateMode } from '../helpers/types';
-import { getFirstSigner } from '@aave/deploy-v3/dist/helpers/utilities/signer';
+import { getFirstSigner } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/utilities/signer';
 import { topUpNonPayableWithEther } from './helpers/utils/funds';
 import { makeSuite } from './helpers/make-suite';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
@@ -19,7 +19,7 @@ import {
   MockFlashLoanReceiver__factory,
 } from '../types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { evmSnapshot, evmRevert, increaseTime } from '@aave/deploy-v3';
+import { evmSnapshot, evmRevert, increaseTime } from '@anirudhtx/aave-v3-deploy-pyth';
 
 declare var hre: HardhatRuntimeEnvironment;
 makeSuite('Interest Rate and Index Overflow', (testEnv) => {
@@ -268,6 +268,7 @@ makeSuite('Interest Rate and Index Overflow', (testEnv) => {
     // Set liquidity rate to max
     await mockRateStrategy.setLiquidityRate(BigNumber.from(2).pow(128).sub(1));
     // Borrow funds
+    // empty price update data
     await pool
       .connect(user.signer)
       .borrow(
@@ -275,7 +276,8 @@ makeSuite('Interest Rate and Index Overflow', (testEnv) => {
         await convertToCurrencyDecimals(mockToken.address, '100'),
         RateMode.Variable,
         0,
-        user.address
+        user.address,
+        []
       );
 
     // set borrow rate to max
@@ -332,6 +334,7 @@ makeSuite('Interest Rate and Index Overflow', (testEnv) => {
 
     await mockRateStrategy.setLiquidityRate(BigNumber.from(10).pow(27));
     await mockRateStrategy.setVariableBorrowRate(BigNumber.from(2).pow(110).sub(1));
+    // empty price update data
     await pool
       .connect(user.signer)
       .borrow(
@@ -339,7 +342,8 @@ makeSuite('Interest Rate and Index Overflow', (testEnv) => {
         await convertToCurrencyDecimals(mockToken.address, '100'),
         RateMode.Variable,
         0,
-        user.address
+        user.address,
+        []
       );
 
     await increaseTime(60 * 60 * 24 * 365);
@@ -378,6 +382,7 @@ makeSuite('Interest Rate and Index Overflow', (testEnv) => {
     );
 
     await expect(
+      // empty price update data
       pool
         .connect(user.signer)
         .flashLoan(
@@ -387,7 +392,8 @@ makeSuite('Interest Rate and Index Overflow', (testEnv) => {
           [RateMode.None],
           user.address,
           '0x00',
-          0
+          0,
+          []
         )
     ).to.be.revertedWith(SAFECAST_UINT128_OVERFLOW);
   });

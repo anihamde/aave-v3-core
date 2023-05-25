@@ -23,7 +23,7 @@ import {
   getStableDebtToken,
   getVariableDebtToken,
   getTestnetReserveAddressFromSymbol,
-} from '@aave/deploy-v3/dist/helpers/contract-getters';
+} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import { MAX_UINT_AMOUNT, ONE_YEAR } from '../../helpers/constants';
 import { SignerWithAddress, TestEnv } from './make-suite';
 import chai from 'chai';
@@ -32,7 +32,7 @@ import { ContractReceipt, Wallet } from 'ethers';
 import { AToken } from '../../types/AToken';
 import { RateMode, tEthereumAddress } from '../../helpers/types';
 import { MintableERC20__factory } from '../../types';
-import { waitForTx, advanceTimeAndBlock } from '@aave/deploy-v3';
+import { waitForTx, advanceTimeAndBlock } from '@anirudhtx/aave-v3-deploy-pyth';
 import { getChainId } from 'hardhat';
 import { timeLatest } from '../../helpers/misc-utils';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -247,7 +247,8 @@ export const withdraw = async (
 
   if (expectedResult === 'success') {
     const txResult = await waitForTx(
-      await pool.connect(user.signer).withdraw(reserve, amountToWithdraw, user.address)
+      // empty price update data
+      await pool.connect(user.signer).withdraw(reserve, amountToWithdraw, user.address, [])
     );
 
     const {
@@ -286,7 +287,8 @@ export const withdraw = async (
     // });
   } else if (expectedResult === 'revert') {
     await expect(
-      pool.connect(user.signer).withdraw(reserve, amountToWithdraw, user.address),
+      // empty price update data
+      pool.connect(user.signer).withdraw(reserve, amountToWithdraw, user.address, []),
       revertMessage
     ).to.be.reverted;
   }
@@ -366,9 +368,10 @@ export const borrow = async (
 
   const amountToBorrow = await convertToCurrencyDecimals(reserve, amount);
 
+  // empty price update data
   const tx = pool
     .connect(user.signer)
-    .borrow(reserve, amountToBorrow, interestRateMode, '0', onBehalfOf);
+    .borrow(reserve, amountToBorrow, interestRateMode, '0', onBehalfOf, []);
 
   if (expectedResult === 'success') {
     const txResult = await waitForTx(await tx);
@@ -816,7 +819,10 @@ export const setUseAsCollateral = async (
 
   if (expectedResult === 'success') {
     const txResult = await waitForTx(
-      await pool.connect(user.signer).setUserUseReserveAsCollateral(reserve, useAsCollateralBool)
+      // empty price update data
+      await pool
+        .connect(user.signer)
+        .setUserUseReserveAsCollateral(reserve, useAsCollateralBool, [])
     );
 
     const { txCost } = await getTxCostAndTimestamp(txResult);
@@ -844,7 +850,8 @@ export const setUseAsCollateral = async (
     // }
   } else if (expectedResult === 'revert') {
     await expect(
-      pool.connect(user.signer).setUserUseReserveAsCollateral(reserve, useAsCollateralBool),
+      // empty price update data
+      pool.connect(user.signer).setUserUseReserveAsCollateral(reserve, useAsCollateralBool, []),
       revertMessage
     ).to.be.reverted;
   }

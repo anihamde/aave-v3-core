@@ -2,7 +2,7 @@ import { configuration as actionsConfiguration } from './helpers/actions';
 import { configuration as calculationsConfiguration } from './helpers/utils/calculations';
 import { makeSuite } from './helpers/make-suite';
 import { executeStory } from './helpers/scenario-engine';
-import AaveConfig from '@aave/deploy-v3/dist/markets/test';
+import AaveConfig from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test';
 
 makeSuite('Subgraph scenario tests', async (testEnv) => {
   let story: any;

@@ -284,7 +284,12 @@ interface IPool {
    *   different wallet
    * @return The final amount withdrawn
    */
-  function withdraw(address asset, uint256 amount, address to) external returns (uint256);
+  function withdraw(
+    address asset,
+    uint256 amount,
+    address to,
+    bytes[] memory priceUpdateData
+  ) external payable returns (uint256);
 
   /**
    * @notice Allows users to borrow a specific `amount` of the reserve underlying asset, provided that the borrower
@@ -306,8 +311,9 @@ interface IPool {
     uint256 amount,
     uint256 interestRateMode,
     uint16 referralCode,
-    address onBehalfOf
-  ) external;
+    address onBehalfOf,
+    bytes[] memory priceUpdateData
+  ) external payable;
 
   /**
    * @notice Repays a borrowed `amount` on a specific reserve, burning the equivalent debt tokens owned
@@ -396,7 +402,11 @@ interface IPool {
    * @param asset The address of the underlying asset supplied
    * @param useAsCollateral True if the user wants to use the supply as collateral, false otherwise
    */
-  function setUserUseReserveAsCollateral(address asset, bool useAsCollateral) external;
+  function setUserUseReserveAsCollateral(
+    address asset,
+    bool useAsCollateral,
+    bytes[] memory priceUpdateData
+  ) external payable;
 
   /**
    * @notice Function to liquidate a non-healthy position collateral-wise, with Health Factor below 1
@@ -414,8 +424,9 @@ interface IPool {
     address debtAsset,
     address user,
     uint256 debtToCover,
-    bool receiveAToken
-  ) external;
+    bool receiveAToken,
+    bytes[] calldata priceUpdateData
+  ) external payable;
 
   /**
    * @notice Allows smartcontracts to access the liquidity of the pool within one transaction,
@@ -441,8 +452,9 @@ interface IPool {
     uint256[] calldata interestRateModes,
     address onBehalfOf,
     bytes calldata params,
-    uint16 referralCode
-  ) external;
+    uint16 referralCode,
+    bytes[] memory priceUpdateData
+  ) external payable;
 
   /**
    * @notice Allows smartcontracts to access the liquidity of the pool within one transaction,
@@ -597,8 +609,9 @@ interface IPool {
     address to,
     uint256 amount,
     uint256 balanceFromBefore,
-    uint256 balanceToBefore
-  ) external;
+    uint256 balanceToBefore,
+    bytes[] memory priceUpdateData
+  ) external payable;
 
   /**
    * @notice Returns the list of the underlying assets of all the initialized reserves
@@ -661,7 +674,7 @@ interface IPool {
    * @notice Allows a user to use the protocol in eMode
    * @param categoryId The id of the category
    */
-  function setUserEMode(uint8 categoryId) external;
+  function setUserEMode(uint8 categoryId, bytes[] memory priceUpdateData) external payable;
 
   /**
    * @notice Returns the eMode the user is using

@@ -4,7 +4,7 @@ import { ProtocolErrors, RateMode } from '../helpers/types';
 import { MAX_UINT_AMOUNT } from '../helpers/constants';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { MockFlashLoanReceiver } from '../types/MockFlashLoanReceiver';
-import { getMockFlashLoanReceiver } from '@aave/deploy-v3/dist/helpers/contract-getters';
+import { getMockFlashLoanReceiver } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
 
@@ -111,7 +111,8 @@ makeSuite('PausableReserve', (testEnv: TestEnv) => {
 
     // user tries to burn
     await expect(
-      pool.connect(users[0].signer).withdraw(dai.address, amountDAItoDeposit, users[0].address)
+      // empty price update data
+      pool.connect(users[0].signer).withdraw(dai.address, amountDAItoDeposit, users[0].address, [])
     ).to.revertedWith(RESERVE_PAUSED);
 
     // Configurator unpauses the pool
@@ -127,7 +128,8 @@ makeSuite('PausableReserve', (testEnv: TestEnv) => {
 
     // Try to execute liquidation
     await expect(
-      pool.connect(user.signer).borrow(dai.address, '1', '1', '0', user.address)
+      // empty price update data
+      pool.connect(user.signer).borrow(dai.address, '1', '1', '0', user.address, [])
     ).to.be.revertedWith(RESERVE_PAUSED);
 
     // Unpause the pool
@@ -163,6 +165,7 @@ makeSuite('PausableReserve', (testEnv: TestEnv) => {
     await configurator.connect(users[1].signer).setReservePause(weth.address, true);
 
     await expect(
+      // empty price update data
       pool
         .connect(caller.signer)
         .flashLoan(
@@ -172,7 +175,8 @@ makeSuite('PausableReserve', (testEnv: TestEnv) => {
           [1],
           caller.address,
           '0x10',
-          '0'
+          '0',
+          []
         )
     ).to.be.revertedWith(RESERVE_PAUSED);
 
@@ -223,9 +227,10 @@ makeSuite('PausableReserve', (testEnv: TestEnv) => {
       userGlobalData.availableBorrowsBase.div(usdcPrice).percentMul(9502).toString()
     );
 
+    // empty price update data
     await pool
       .connect(borrower.signer)
-      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address);
+      .borrow(usdc.address, amountUSDCToBorrow, RateMode.Stable, '0', borrower.address, []);
 
     // Drops HF below 1
     await oracle.setAssetPrice(usdc.address, usdcPrice.percentMul(12000));
@@ -245,8 +250,16 @@ makeSuite('PausableReserve', (testEnv: TestEnv) => {
     await configurator.connect(users[1].signer).setReservePause(usdc.address, true);
 
     // Do liquidation
+    // empty price update data
     await expect(
-      pool.liquidationCall(weth.address, usdc.address, borrower.address, amountToLiquidate, true)
+      pool.liquidationCall(
+        weth.address,
+        usdc.address,
+        borrower.address,
+        amountToLiquidate,
+        true,
+        []
+      )
     ).to.be.revertedWith(RESERVE_PAUSED);
 
     // Unpause pool
@@ -268,7 +281,8 @@ makeSuite('PausableReserve', (testEnv: TestEnv) => {
     await dai.connect(user.signer).approve(pool.address, MAX_UINT_AMOUNT);
     await pool.connect(user.signer).deposit(dai.address, amountDAIToDeposit, user.address, '0');
 
-    await pool.connect(user.signer).borrow(usdc.address, amountToBorrow, 2, 0, user.address);
+    // empty price update data
+    await pool.connect(user.signer).borrow(usdc.address, amountToBorrow, 2, 0, user.address, []);
 
     // Pause pool
     await configurator.connect(users[1].signer).setReservePause(usdc.address, true);
@@ -309,7 +323,8 @@ makeSuite('PausableReserve', (testEnv: TestEnv) => {
     await configurator.connect(users[1].signer).setReservePause(weth.address, true);
 
     await expect(
-      pool.connect(user.signer).setUserUseReserveAsCollateral(weth.address, false)
+      // empty price update data
+      pool.connect(user.signer).setUserUseReserveAsCollateral(weth.address, false, [])
     ).to.be.revertedWith(RESERVE_PAUSED);
 
     // Unpause pool

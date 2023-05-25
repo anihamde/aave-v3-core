@@ -11,7 +11,7 @@ import {
   StableDebtToken__factory,
   VariableDebtToken__factory,
 } from '../types';
-import { getFirstSigner } from '@aave/deploy-v3/dist/helpers/utilities/signer';
+import { getFirstSigner } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/utilities/signer';
 import { makeSuite } from './helpers/make-suite';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { setBlocktime, timeLatest } from '../helpers/misc-utils';
@@ -215,6 +215,7 @@ makeSuite('Reserve Without Incentives Controller', (testEnv) => {
     await pool
       .connect(user.signer)
       .deposit(dai.address, await convertToCurrencyDecimals(dai.address, '10000'), user.address, 0);
+    // empty price update data
     await pool
       .connect(user.signer)
       .borrow(
@@ -222,7 +223,8 @@ makeSuite('Reserve Without Incentives Controller', (testEnv) => {
         await convertToCurrencyDecimals(mockToken.address, '100'),
         RateMode.Stable,
         0,
-        user.address
+        user.address,
+        []
       );
 
     expect(await aMockToken.balanceOf(user.address)).to.be.eq(0);
@@ -285,9 +287,10 @@ makeSuite('Reserve Without Incentives Controller', (testEnv) => {
     });
 
     await aMockToken.connect(user.signer).approve(pool.address, MAX_UINT_AMOUNT);
+    // empty price update data
     await pool
       .connect(user.signer)
-      .withdraw(mockToken.address, aMockTokenBalanceBefore, user.address);
+      .withdraw(mockToken.address, aMockTokenBalanceBefore, user.address, []);
 
     expect(await aMockToken.balanceOf(user.address)).to.be.eq(0);
     expect(await mockToken.balanceOf(user.address)).to.be.eq(aMockTokenBalanceBefore);

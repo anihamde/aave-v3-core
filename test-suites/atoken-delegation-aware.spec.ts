@@ -6,7 +6,7 @@ import { makeSuite, TestEnv } from './helpers/make-suite';
 import {
   deployMintableDelegationERC20,
   deployDelegationAwareAToken,
-} from '@aave/deploy-v3/dist/helpers/contract-deployments';
+} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-deployments';
 
 makeSuite('AToken: DelegationAwareAToken', (testEnv: TestEnv) => {
   let delegationAToken = <DelegationAwareAToken>{};

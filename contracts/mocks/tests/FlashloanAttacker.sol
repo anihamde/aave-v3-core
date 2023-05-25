@@ -33,7 +33,10 @@ contract FlashloanAttacker is FlashLoanSimpleReceiverBase {
     DataTypes.ReserveData memory config = _pool.getReserveData(asset);
     IERC20 token = IERC20(asset);
     uint256 avail = token.balanceOf(config.aTokenAddress);
-    _pool.borrow(asset, avail, 2, 0, address(this));
+
+    // TODO: replace with actual price update
+    bytes[] memory emptyUpdate = new bytes[](0);
+    _pool.borrow(asset, avail, 2, 0, address(this), emptyUpdate);
   }
 
   function executeOperation(

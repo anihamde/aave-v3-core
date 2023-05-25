@@ -1,8 +1,8 @@
 const { expect } = require('chai');
 import { BigNumber, Event, utils } from 'ethers';
-import AaveConfig from '@aave/deploy-v3/dist/markets/test';
-import { waitForTx, advanceTimeAndBlock } from '@aave/deploy-v3';
-import { getACLManager } from '@aave/deploy-v3/dist/helpers/contract-getters';
+import AaveConfig from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test';
+import { waitForTx, advanceTimeAndBlock } from '@anirudhtx/aave-v3-deploy-pyth';
+import { getACLManager } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import { ReserveData, UserReserveData } from './helpers/utils/interfaces';
 import { ProtocolErrors, RateMode } from '../helpers/types';
 import { MAX_UINT_AMOUNT, MAX_UNBACKED_MINT_CAP } from '../helpers/constants';
@@ -77,18 +77,20 @@ makeSuite('BridgeLogic: Testing with borrows', (testEnv: TestEnv) => {
   it('User 1 borrows 200 dai with variable debt', async () => {
     const { users, pool, dai } = testEnv;
     await waitForTx(
+      // empty price update data
       await pool
         .connect(users[1].signer)
-        .borrow(dai.address, borrowAmount, RateMode.Variable, 0, users[1].address)
+        .borrow(dai.address, borrowAmount, RateMode.Variable, 0, users[1].address, [])
     );
   });
 
   it('User 1 borrows 200 dai with stable debt', async () => {
     const { users, pool, dai } = testEnv;
     await waitForTx(
+      // empty price update data
       await pool
         .connect(users[1].signer)
-        .borrow(dai.address, borrowAmount, RateMode.Stable, 0, users[1].address)
+        .borrow(dai.address, borrowAmount, RateMode.Stable, 0, users[1].address, [])
     );
   });
 

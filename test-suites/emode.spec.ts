@@ -6,7 +6,7 @@ import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { makeSuite, TestEnv } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
 import { parseUnits, formatUnits, parseEther } from '@ethersproject/units';
-import { evmSnapshot, evmRevert, VariableDebtToken__factory } from '@aave/deploy-v3';
+import { evmSnapshot, evmRevert, VariableDebtToken__factory } from '@anirudhtx/aave-v3-deploy-pyth';
 
 makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
   const {
@@ -100,7 +100,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
       users: [user0],
     } = testEnv;
 
-    expect(await pool.connect(user0.signer).setUserEMode(CATEGORIES.STABLECOINS.id))
+    // empty price update data
+    expect(await pool.connect(user0.signer).setUserEMode(CATEGORIES.STABLECOINS.id, []))
       .to.emit(pool, 'UserEModeSet')
       .withArgs(user0.address, CATEGORIES.STABLECOINS.id);
 
@@ -147,6 +148,7 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
       users: [user0],
     } = testEnv;
     expect(
+      // empty price update data
       await pool
         .connect(user0.signer)
         .borrow(
@@ -154,12 +156,14 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
           await convertToCurrencyDecimals(usdc.address, '98'),
           RateMode.Variable,
           0,
-          user0.address
+          user0.address,
+          []
         )
     );
 
     const userCategory = await pool.getUserEMode(user0.address);
-    await expect(pool.connect(user0.signer).setUserEMode(0)).to.be.revertedWith(
+    // empty price update data
+    await expect(pool.connect(user0.signer).setUserEMode(0, [])).to.be.revertedWith(
       HEALTH_FACTOR_LOWER_THAN_LIQUIDATION_THRESHOLD
     );
     expect(await pool.getUserEMode(user0.address)).to.be.eq(userCategory);
@@ -212,9 +216,15 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
         false
       );
     expect(
+      // empty price update data
       await pool
         .connect(user0.signer)
-        .withdraw(dai.address, await convertToCurrencyDecimals(dai.address, '10'), user0.address)
+        .withdraw(
+          dai.address,
+          await convertToCurrencyDecimals(dai.address, '10'),
+          user0.address,
+          []
+        )
     );
   });
 
@@ -271,7 +281,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
     );
 
     // Activate EMode, increasing availableBorrowsBase
-    expect(await pool.connect(user1.signer).setUserEMode(CATEGORIES.ETHEREUM.id))
+    // empty price update data
+    expect(await pool.connect(user1.signer).setUserEMode(CATEGORIES.ETHEREUM.id, []))
       .to.emit(pool, 'UserEModeSet')
       .withArgs(user1.address, CATEGORIES.ETHEREUM.id);
     expect(await pool.getUserEMode(user1.address)).to.be.eq(CATEGORIES.ETHEREUM.id);
@@ -293,7 +304,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
 
     const userCategory = await pool.getUserEMode(user0.address);
     await expect(
-      pool.connect(user0.signer).setUserEMode(CATEGORIES.ETHEREUM.id)
+      // empty price update data
+      pool.connect(user0.signer).setUserEMode(CATEGORIES.ETHEREUM.id, [])
     ).to.be.revertedWith(INCONSISTENT_EMODE_CATEGORY);
     expect(await pool.getUserEMode(user0.address)).to.be.eq(userCategory);
   });
@@ -306,6 +318,7 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
     } = testEnv;
 
     await expect(
+      // empty price update data
       pool
         .connect(user0.signer)
         .borrow(
@@ -313,7 +326,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
           await convertToCurrencyDecimals(weth.address, '0.0001'),
           RateMode.Variable,
           0,
-          user0.address
+          user0.address,
+          []
         )
     ).to.be.revertedWith(INCONSISTENT_EMODE_CATEGORY);
   });
@@ -326,6 +340,7 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
     } = testEnv;
 
     await expect(
+      // empty price update data
       pool
         .connect(user1.signer)
         .borrow(
@@ -333,7 +348,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
           await convertToCurrencyDecimals(dai.address, '10'),
           RateMode.Variable,
           0,
-          user1.address
+          user1.address,
+          []
         )
     ).to.be.revertedWith(INCONSISTENT_EMODE_CATEGORY);
   });
@@ -351,7 +367,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
         .repay(usdc.address, MAX_UINT_AMOUNT, RateMode.Variable, user0.address)
     );
 
-    expect(await pool.connect(user0.signer).setUserEMode(CATEGORIES.ETHEREUM.id));
+    // empty price update data
+    expect(await pool.connect(user0.signer).setUserEMode(CATEGORIES.ETHEREUM.id, []));
     expect(await pool.getUserEMode(user0.address)).to.be.eq(CATEGORIES.ETHEREUM.id);
   });
 
@@ -361,7 +378,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
       users: [, user1],
     } = testEnv;
 
-    expect(await pool.connect(user1.signer).setUserEMode(CATEGORIES.STABLECOINS.id));
+    // empty price update data
+    expect(await pool.connect(user1.signer).setUserEMode(CATEGORIES.STABLECOINS.id, []));
     expect(await pool.getUserEMode(user1.address)).to.be.eq(CATEGORIES.STABLECOINS.id);
   });
 
@@ -373,6 +391,7 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
     } = testEnv;
 
     await expect(
+      // empty price update data
       pool
         .connect(user0.signer)
         .borrow(
@@ -380,7 +399,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
           await convertToCurrencyDecimals(usdc.address, '5'),
           RateMode.Stable,
           0,
-          user0.address
+          user0.address,
+          []
         )
     ).to.be.revertedWith(INCONSISTENT_EMODE_CATEGORY);
   });
@@ -471,7 +491,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
     );
 
     // Alice set eMode to stablecoins
-    expect(await pool.connect(user4.signer).setUserEMode(CATEGORIES.STABLECOINS.id));
+    // empty price update data
+    expect(await pool.connect(user4.signer).setUserEMode(CATEGORIES.STABLECOINS.id, []));
     expect(await pool.getUserEMode(user4.address)).to.be.eq(CATEGORIES.STABLECOINS.id);
 
     // Alice delegates 1 weth with variable rate to Bob.
@@ -485,7 +506,10 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
 
     // Bob borrows 0.01 weth on behalf of Alice (should revert)
     await expect(
-      pool.connect(user5.signer).borrow(weth.address, parseUnits('0.01', 18), 2, 0, user4.address)
+      // empty price update data
+      pool
+        .connect(user5.signer)
+        .borrow(weth.address, parseUnits('0.01', 18), 2, 0, user4.address, [])
     ).to.be.revertedWith(INCONSISTENT_EMODE_CATEGORY);
 
     expect(await weth.balanceOf(user5.address)).to.be.eq(
@@ -536,12 +560,14 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
     );
 
     // Bob set eMode to stablecoins
-    expect(await pool.connect(user5.signer).setUserEMode(CATEGORIES.STABLECOINS.id));
+    // empty price update data
+    expect(await pool.connect(user5.signer).setUserEMode(CATEGORIES.STABLECOINS.id, []));
     expect(await pool.getUserEMode(user5.address)).to.be.eq(CATEGORIES.STABLECOINS.id);
 
     // Bob borrows 90 usdc on behalf of Alice
     await expect(
-      pool.connect(user5.signer).borrow(usdc.address, parseUnits('90', 6), 2, 0, user4.address)
+      // empty price update data
+      pool.connect(user5.signer).borrow(usdc.address, parseUnits('90', 6), 2, 0, user4.address, [])
     ).to.be.revertedWith(COLLATERAL_CANNOT_COVER_NEW_BORROW);
 
     // Alice is still in a position where she CANNOT be liquidated
@@ -657,12 +683,19 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
     } = testEnv;
 
     expect(
+      // empty price update data
       await pool
         .connect(user1.signer)
-        .withdraw(weth.address, await convertToCurrencyDecimals(weth.address, '0.7'), user1.address)
+        .withdraw(
+          weth.address,
+          await convertToCurrencyDecimals(weth.address, '0.7'),
+          user1.address,
+          []
+        )
     );
 
     expect(
+      // empty price update data
       await pool
         .connect(user1.signer)
         .borrow(
@@ -670,7 +703,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
           await convertToCurrencyDecimals(usdc.address, '100'),
           RateMode.Variable,
           0,
-          user1.address
+          user1.address,
+          []
         )
     );
   });
@@ -776,7 +810,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
     const expectedCollateralDaiPrice = daiAmount.wadMul(daiPrice);
     expect(dataBefore.totalCollateralBase).to.be.eq(expectedCollateralDaiPrice);
 
-    expect(await pool.connect(user2.signer).setUserEMode(id));
+    // empty price update data
+    expect(await pool.connect(user2.signer).setUserEMode(id, []));
     expect(await pool.getUserEMode(user2.address)).to.be.eq(id);
 
     const dataAfter = await pool.getUserAccountData(user2.address);
@@ -792,7 +827,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
 
     const userDataBefore = await pool.getUserAccountData(user0.address);
 
-    expect(await pool.connect(user0.signer).setUserEMode(0));
+    // empty price update data
+    expect(await pool.connect(user0.signer).setUserEMode(0, []));
     expect(await pool.getUserEMode(user0.address)).to.be.eq(0);
 
     const userDataAfter = await pool.getUserAccountData(user0.address);
@@ -846,7 +882,8 @@ makeSuite('EfficiencyMode', (testEnv: TestEnv) => {
     expect(userDataBefore.totalCollateralBase).to.be.eq(baseUnit.mul(100));
 
     // Activate eMode for ETH
-    expect(await pool.connect(user.signer).setUserEMode(id));
+    // empty price update data
+    expect(await pool.connect(user.signer).setUserEMode(id, []));
 
     // Look at power
     const userDataAfter = await pool.getUserAccountData(user.address);

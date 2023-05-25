@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { utils, BigNumber, BigNumberish } from 'ethers';
-import { strategyWETH } from '@aave/deploy-v3/dist/markets/test/reservesConfigs';
-import { getFirstSigner } from '@aave/deploy-v3/dist/helpers/utilities/signer';
+import { strategyWETH } from '@anirudhtx/aave-v3-deploy-pyth/dist/markets/test/reservesConfigs';
+import { getFirstSigner } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/utilities/signer';
 import { MAX_UINT_AMOUNT, ONE_ADDRESS, RAY, ZERO_ADDRESS } from '../helpers/constants';
 import { ProtocolErrors } from '../helpers/types';
 import {
@@ -13,7 +13,7 @@ import {
   VariableDebtToken__factory,
 } from '../types';
 import { TestEnv, makeSuite } from './helpers/make-suite';
-import { advanceTimeAndBlock, evmRevert, evmSnapshot } from '@aave/deploy-v3';
+import { advanceTimeAndBlock, evmRevert, evmSnapshot } from '@anirudhtx/aave-v3-deploy-pyth';
 
 type ReserveConfigurationValues = {
   reserveDecimals: string;
@@ -949,7 +949,8 @@ makeSuite('PoolConfigurator', (testEnv: TestEnv) => {
 
     await pool.connect(user2.signer).supply(dai.address, daiAmount, user2.address, '0');
 
-    await pool.connect(user2.signer).borrow(weth.address, '100', 2, '0', user2.address);
+    // empty price update data
+    await pool.connect(user2.signer).borrow(weth.address, '100', 2, '0', user2.address, []);
 
     await expect(configurator.setSiloedBorrowing(weth.address, true)).to.be.revertedWith(
       RESERVE_DEBT_NOT_ZERO
@@ -1041,7 +1042,8 @@ makeSuite('PoolConfigurator', (testEnv: TestEnv) => {
       users: [user1],
     } = testEnv;
 
-    await pool.connect(user1.signer).withdraw(weth.address, MAX_UINT_AMOUNT, user1.address);
+    // empty price update data
+    await pool.connect(user1.signer).withdraw(weth.address, MAX_UINT_AMOUNT, user1.address, []);
 
     await configurator.connect(riskAdmin.signer).setDebtCeiling(weth.address, '100');
 

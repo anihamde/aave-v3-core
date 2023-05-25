@@ -4,7 +4,7 @@ import {
   advanceTimeAndBlock,
   ZERO_ADDRESS,
   MintableERC20__factory,
-} from '@aave/deploy-v3';
+} from '@anirudhtx/aave-v3-deploy-pyth';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
@@ -67,6 +67,7 @@ const increaseSupplyIndex = async (
 
   const { aTokenAddress } = await pool.getReserveData(assetToIncrease);
   const availableLiquidity = await borrowingToken.balanceOf(aTokenAddress);
+  // empty price update data
   await pool
     .connect(borrower.signer)
     .borrow(
@@ -74,7 +75,8 @@ const increaseSupplyIndex = async (
       availableLiquidity.percentMul('20'),
       RateMode.Variable,
       0,
-      borrower.address
+      borrower.address,
+      []
     );
 
   await advanceTimeAndBlock(10000000000);

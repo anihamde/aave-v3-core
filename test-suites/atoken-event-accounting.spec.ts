@@ -1,5 +1,6 @@
+import { MOCK_ORACLES_PRICES } from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/constants';
 import { MockATokenRepayment } from './../types/mocks/tokens/MockATokenRepayment';
-import { waitForTx, increaseTime, ZERO_ADDRESS } from '@aave/deploy-v3';
+import { waitForTx, increaseTime, ZERO_ADDRESS } from '@anirudhtx/aave-v3-deploy-pyth';
 import { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { MAX_UINT_AMOUNT } from '../helpers/constants';
@@ -7,6 +8,7 @@ import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
 import { RateMode } from '../helpers/types';
 import { makeSuite } from './helpers/make-suite';
 import { getATokenEvent, getVariableDebtTokenEvent } from './helpers/utils/tokenization-events';
+import Web3 from 'web3';
 import { MockATokenRepayment__factory } from '../types';
 
 makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
@@ -132,6 +134,7 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
       users: [, borrower],
       pool,
       helpersContract,
+      aaveOracle,
     } = testEnv;
 
     // user 2 deposits 100 ETH
@@ -155,12 +158,35 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
 
     // Borrow DAI
     firstDaiBorrow = await convertToCurrencyDecimals(dai.address, '5000');
+    const daiPrice = MOCK_ORACLES_PRICES.DAI;
+    expect(await aaveOracle.getAssetPrice(dai.address)).to.be.eq(daiPrice);
+
+    // craft a price update message to pass into borrow to update price alongside the operation
+    const priceID = await aaveOracle.getSourceOfAsset(dai.address);
+    const price = daiPrice + 2;
+    const conf = 100;
+    const expo = 0;
+    const emaPrice = price;
+    const emaConf = conf;
+    // increment last publish time by 1
+    const publishTime = (await aaveOracle.getLastUpdateTime(dai.address)).add(1);
+
+    var web3 = new Web3(Web3.givenProvider);
+    const priceUpdateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [priceID, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
+    );
 
     await waitForTx(
       await pool
         .connect(borrower.signer)
-        .borrow(dai.address, firstDaiBorrow, RateMode.Variable, '0', borrower.address)
+        .borrow(dai.address, firstDaiBorrow, RateMode.Variable, '0', borrower.address, [
+          priceUpdateData,
+        ])
     );
+
+    // check that the borrow included price update
+    expect(await aaveOracle.getAssetPrice(dai.address)).to.be.eq(price);
 
     const borrowerWethData = await helpersContract.getUserReserveData(
       weth.address,
@@ -178,14 +204,32 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
       users: [, borrower],
       pool,
       helpersContract,
+      aaveOracle,
     } = testEnv;
     await increaseTime(86400);
+
+    // craft a price update message to pass into borrow to update price alongside the operation
+    const priceID = await aaveOracle.getSourceOfAsset(dai.address);
+    const price = (await aaveOracle.getAssetPrice(dai.address)).add(1);
+    const conf = 100;
+    const expo = 0;
+    const emaPrice = price;
+    const emaConf = conf;
+    // increment last publish time by 1
+    const publishTime = (await aaveOracle.getLastUpdateTime(dai.address)).add(1);
+    var web3 = new Web3(Web3.givenProvider);
+    const priceUpdateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [priceID, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
+    );
 
     // execute borrow
     secondDaiBorrow = await convertToCurrencyDecimals(dai.address, '2000');
     const borrowTx = await pool
       .connect(borrower.signer)
-      .borrow(dai.address, secondDaiBorrow, RateMode.Variable, '0', borrower.address);
+      .borrow(dai.address, secondDaiBorrow, RateMode.Variable, '0', borrower.address, [
+        priceUpdateData,
+      ]);
     const borrowReceipt = await borrowTx.wait();
 
     const borrowerDaiData = await helpersContract.getUserReserveData(dai.address, borrower.address);
@@ -403,12 +447,30 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
       users: [depositor],
       pool,
       helpersContract,
+      aaveOracle,
     } = testEnv;
     const daiBalanceBefore = await dai.balanceOf(depositor.address);
 
+    // craft a price update message to pass into borrow to update price alongside the operation
+    const priceID = await aaveOracle.getSourceOfAsset(dai.address);
+    const price = (await aaveOracle.getAssetPrice(dai.address)).add(1);
+    const conf = 100;
+    const expo = 0;
+    const emaPrice = price;
+    const emaConf = conf;
+    // increment last publish time by 1
+    const publishTime = (await aaveOracle.getLastUpdateTime(dai.address)).add(1);
+
+    var web3 = new Web3(Web3.givenProvider);
+    const priceUpdateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [priceID, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
+    );
+
+    // empty price update data
     const withdrawTx = await pool
       .connect(depositor.signer)
-      .withdraw(dai.address, MAX_UINT_AMOUNT, depositor.address);
+      .withdraw(dai.address, MAX_UINT_AMOUNT, depositor.address, [priceUpdateData], []);
     const withdrawReceipt = await withdrawTx.wait();
 
     const aDaiBalance = await aDai.balanceOf(depositor.address);
@@ -456,6 +518,7 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
       variableDebtDai,
       users: [depositor, borrower],
       pool,
+      aaveOracle,
     } = testEnv;
 
     // User 1 - Deposit DAI
@@ -465,12 +528,29 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
         .deposit(dai.address, firstDaiDeposit, depositor.address, '0')
     );
 
+    // craft a price update message to pass into borrow to update price alongside the operation
+    const priceID = await aaveOracle.getSourceOfAsset(dai.address);
+    const price = (await aaveOracle.getAssetPrice(dai.address)).add(1);
+    const conf = 100;
+    const expo = 0;
+    const emaPrice = price;
+    const emaConf = conf;
+    // increment last publish time by 1
+    const publishTime = (await aaveOracle.getLastUpdateTime(dai.address)).add(1);
+    var web3 = new Web3(Web3.givenProvider);
+    const priceUpdateData = web3.eth.abi.encodeParameters(
+      ['bytes32', 'int64', 'uint64', 'int32', 'uint64', 'int64', 'uint64', 'int32', 'uint64'],
+      [priceID, price, conf, expo, publishTime, emaPrice, emaConf, expo, publishTime]
+    );
+
     // User 2 - Borrow DAI
     const borrowAmount = await convertToCurrencyDecimals(dai.address, '8000');
     await waitForTx(
       await pool
         .connect(borrower.signer)
-        .borrow(dai.address, borrowAmount, RateMode.Variable, '0', borrower.address)
+        .borrow(dai.address, borrowAmount, RateMode.Variable, '0', borrower.address, [
+          priceUpdateData,
+        ])
     );
 
     const debtBalanceBefore = await variableDebtDai.balanceOf(borrower.address);
@@ -528,9 +608,13 @@ makeSuite('AToken: Mint and Burn Event Accounting', (testEnv) => {
     // repay a very small amount - less than accrued debt
     const smallWithdrawal = BigNumber.from('100000');
 
+    // empty price update data
+    const emptyPriceUpdateData = [];
+
+    // empty price update data
     const withdrawTx = await pool
       .connect(depositor.signer)
-      .withdraw(dai.address, smallWithdrawal, depositor.address);
+      .withdraw(dai.address, smallWithdrawal, depositor.address, emptyPriceUpdateData, []);
     const withdrawReceipt = await withdrawTx.wait();
 
     const aTokenSupplyAfter = await aDai.balanceOf(depositor.address);

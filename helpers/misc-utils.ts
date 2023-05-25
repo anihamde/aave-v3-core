@@ -1,5 +1,6 @@
 import { Wallet, BigNumber } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import Web3 from 'web3';
 
 declare var hre: HardhatRuntimeEnvironment;
 
@@ -35,4 +36,12 @@ export const impersonateAccountsHardhat = async (accounts: string[]) => {
       params: [account],
     });
   }
+};
+
+export const convertAddressToBytes32 = (address: string) => {
+  var web3 = new Web3(Web3.givenProvider);
+
+  let bytes32Address = '0x' + web3.utils.padLeft(address.replace('0x', ''), 64);
+
+  return bytes32Address.toLowerCase();
 };

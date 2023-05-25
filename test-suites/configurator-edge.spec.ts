@@ -10,7 +10,7 @@ import {
   ZERO_ADDRESS,
 } from '../helpers/constants';
 import { convertToCurrencyDecimals } from '../helpers/contracts-helpers';
-import { impersonateAddress } from '@aave/deploy-v3';
+import { impersonateAddress } from '@anirudhtx/aave-v3-deploy-pyth';
 import { topUpNonPayableWithEther } from './helpers/utils/funds';
 import { parseUnits } from 'ethers/lib/utils';
 
@@ -315,8 +315,9 @@ makeSuite('PoolConfigurator: Edge cases', (testEnv: TestEnv) => {
     const updatedConfiguration = await helpersContract.getReserveConfigurationData(dai.address);
     expect(updatedConfiguration.isActive).to.false;
 
-    await expect(pool.withdraw(dai.address, amountDAItoDeposit, userAddress)).to.be.revertedWith(
-      ProtocolErrors.RESERVE_INACTIVE
-    );
+    // empty price update data
+    await expect(
+      pool.withdraw(dai.address, amountDAItoDeposit, userAddress, [])
+    ).to.be.revertedWith(ProtocolErrors.RESERVE_INACTIVE);
   });
 });

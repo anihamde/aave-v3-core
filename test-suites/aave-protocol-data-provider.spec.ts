@@ -2,7 +2,7 @@ import hre from 'hardhat';
 import { expect } from 'chai';
 import { utils } from 'ethers';
 import { makeSuite, TestEnv } from './helpers/make-suite';
-import { getMockPool, ZERO_ADDRESS } from '@aave/deploy-v3';
+import { getMockPool, ZERO_ADDRESS } from '@anirudhtx/aave-v3-deploy-pyth';
 import { InitializableImmutableAdminUpgradeabilityProxy } from '../types';
 import { impersonateAccountsHardhat } from '../helpers/misc-utils';
 import { topUpNonPayableWithEther } from './helpers/utils/funds';

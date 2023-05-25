@@ -8,7 +8,7 @@ import {
   getMockFlashLoanReceiver,
   getStableDebtToken,
   getVariableDebtToken,
-} from '@aave/deploy-v3/dist/helpers/contract-getters';
+} from '@anirudhtx/aave-v3-deploy-pyth/dist/helpers/contract-getters';
 import { TestEnv, makeSuite } from './helpers/make-suite';
 import './helpers/utils/wadraymath';
 
@@ -76,6 +76,7 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
 
     const wethReservesBefore = await aWETH.balanceOf(await aWETH.RESERVE_TREASURY_ADDRESS());
 
+    // empty price update data
     await pool.flashLoan(
       _mockFlashLoanReceiver.address,
       [weth.address],
@@ -83,7 +84,8 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
       [0],
       _mockFlashLoanReceiver.address,
       '0x10',
-      '0'
+      '0',
+      []
     );
 
     await pool.mintToTreasury([weth.address, dai.address]);
@@ -126,6 +128,7 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
 
     const reservesBefore = await aWETH.balanceOf(await aWETH.RESERVE_TREASURY_ADDRESS());
 
+    // empty price update data
     const txResult = await pool.flashLoan(
       _mockFlashLoanReceiver.address,
       [weth.address],
@@ -133,7 +136,8 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
       [0],
       _mockFlashLoanReceiver.address,
       '0x10',
-      '0'
+      '0',
+      []
     );
 
     await pool.mintToTreasury([weth.address]);
@@ -159,6 +163,7 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
     await _mockFlashLoanReceiver.setFailExecutionTransfer(true);
 
     await expect(
+      // empty price update data
       pool
         .connect(caller.signer)
         .flashLoan(
@@ -168,7 +173,8 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
           [0],
           caller.address,
           '0x10',
-          '0'
+          '0',
+          []
         )
     ).to.be.reverted;
   });
@@ -180,6 +186,7 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
     await _mockFlashLoanReceiver.setSimulateEOA(true);
 
     await expect(
+      // empty price update data
       pool
         .connect(caller.signer)
         .flashLoan(
@@ -189,7 +196,8 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
           [0],
           caller.address,
           '0x10',
-          '0'
+          '0',
+          []
         )
     ).to.be.revertedWith(INVALID_FLASHLOAN_EXECUTOR_RETURN);
   });
@@ -199,6 +207,7 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
     const caller = users[1];
 
     await expect(
+      // empty price update data
       pool.connect(caller.signer).flashLoan(
         _mockFlashLoanReceiver.address,
         [weth.address],
@@ -206,7 +215,8 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
         [2],
         caller.address,
         '0x10',
-        '0'
+        '0',
+        []
       ),
       ERC20_TRANSFER_AMOUNT_EXCEEDS_BALANCE
     ).to.be.reverted;
@@ -217,6 +227,7 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
     const caller = users[1];
 
     await expect(
+      // empty price update data
       pool.flashLoan(
         deployer.address,
         [weth.address],
@@ -224,7 +235,8 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
         [2],
         caller.address,
         '0x10',
-        '0'
+        '0',
+        []
       )
     ).to.be.reverted;
   });
@@ -263,6 +275,7 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
 
     const reservesBefore = await aUsdc.balanceOf(await aUsdc.RESERVE_TREASURY_ADDRESS());
 
+    // empty price update data
     await pool.flashLoan(
       _mockFlashLoanReceiver.address,
       [usdc.address],
@@ -270,7 +283,8 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
       [0],
       _mockFlashLoanReceiver.address,
       '0x10',
-      '0'
+      '0',
+      []
     );
 
     await pool.mintToTreasury([usdc.address]);
@@ -299,6 +313,7 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
     await _mockFlashLoanReceiver.setFailExecutionTransfer(true);
 
     await expect(
+      // empty price update data
       pool
         .connect(caller.signer)
         .flashLoan(
@@ -308,7 +323,8 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
           [2],
           caller.address,
           '0x10',
-          '0'
+          '0',
+          []
         )
     ).to.be.revertedWith(INVALID_FLASHLOAN_EXECUTOR_RETURN);
   });
@@ -333,6 +349,7 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
     await _mockFlashLoanReceiver.setAmountToApprove(flashAmount.div(2));
 
     await expect(
+      // empty price update data
       pool
         .connect(caller.signer)
         .flashLoan(
@@ -342,7 +359,8 @@ makeSuite('Pool: FlashLoan for gas comparison', (testEnv: TestEnv) => {
           [0],
           caller.address,
           '0x10',
-          '0'
+          '0',
+          []
         )
     ).to.be.reverted;
   });
